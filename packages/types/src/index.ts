@@ -99,7 +99,8 @@ export const scheduleEntrySchema = z.object({
 export type ScheduleEntry = z.infer<typeof scheduleEntrySchema>;
 
 /** Status shown in the UI, derived from Content + its ScheduleEntry. */
-export type DisplayStatus = "draft" | "saved" | "scheduled" | "posted" | "missed";
+export type DisplayStatus =
+  "draft" | "saved" | "scheduled" | "posted" | "missed";
 
 export function displayStatus(
   content: Pick<Content, "status">,

@@ -4,7 +4,8 @@ packages:
 
 # pnpm only runs dependency install scripts that are explicitly allowed.
 allowBuilds:
-  better-sqlite3: true
+  # v13 ships prebuilt binaries (prebuilds/); compiling would need MSVC build tools.
+  better-sqlite3: false
   esbuild: true
   sharp: false
   unrs-resolver: false

@@ -6,3 +6,4 @@ node_modules/
 dist/
 data/
 next-env.d.ts
+packages/db/drizzle/
