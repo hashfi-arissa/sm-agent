@@ -5,6 +5,7 @@ Full scope, IA, data model and milestone checklists: **[docs/PLAN.md](docs/PLAN.
 before starting work, and tick its checklists / update the milestone Status when work lands.
 
 ## Hard constraints
+
 - **AI = the user's Codex subscription via the local `codex app-server`, never the OpenAI API.**
   The app must run on the user's machine. Do not add API-key calls or a hosted AI backend.
 - All AI access goes through the `AIProvider` interface in `packages/ai`; UI and routes never
@@ -17,23 +18,42 @@ before starting work, and tick its checklists / update the milestone Status when
 - Out of scope until asked: thumbnail placement, non-Reels platforms, auto-posting, multi-user.
 
 ## Stack
+
 pnpm + Turborepo · Next.js 16 (App Router) · Astro 7 · TypeScript · Tailwind 4 + shadcn/ui ·
 SQLite (`better-sqlite3`) + Drizzle · zod 4 · FullCalendar 7 · @dnd-kit · Electron (M5).
 
 ## Layout
+
 - `apps/app` — Next.js app (localhost)
 - `apps/landing` — Astro landing page
 - `packages/ai` — `AIProvider` + `codex/` app-server bridge
 - `packages/db` — Drizzle schema, migrations, queries
 - `packages/types` — shared zod schemas
-- `packages/ui` — shared components
+- `packages/ui` — shared Tailwind theme (`globals.css`) + shadcn components
+- `packages/typescript-config`, `packages/eslint-config` — shared configs
 - `data/` — local SQLite db (gitignored)
 
+Internal packages are consumed as TypeScript source (no build step); import them as `@repo/<name>`.
+
 ## Commands
-_Filled in once the monorepo is scaffolded (M0)._
+
+Run from the repo root:
+
+- `pnpm dev` — app on http://localhost:3000 + landing on http://localhost:4321
+- `pnpm dev:app` / `pnpm dev:landing` — just one of them
+- `pnpm build` · `pnpm lint` · `pnpm typecheck` — all via Turborepo
+- `pnpm format` / `pnpm format:check` — Prettier (with Astro + Tailwind plugins)
+- Add a shadcn component (lands in `packages/ui`): `pnpm dlx shadcn@latest add <name> -c apps/app`
+
+Before calling work done: `pnpm typecheck && pnpm lint && pnpm build` must pass.
 
 ## Conventions
+
 - Platform: Windows dev machine; keep scripts cross-platform (no bash-only npm scripts).
 - Line endings are LF (`.gitattributes`).
+- TypeScript 5.9 everywhere — create-next-app 16 targets TS 5; don't bump to TS 7 without
+  confirming Next.js supports it.
+- `apps/app` and `apps/landing` each have their own `AGENTS.md` with framework-specific notes
+  (Next 16 / Astro 7 differ from older versions) — read it before working in that app.
 - Validate every API route input with the shared zod schemas from `packages/types`.
 - Schedule dates are stored as local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`), not UTC timestamps.
