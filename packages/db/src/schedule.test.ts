@@ -8,6 +8,7 @@ import { createContent, deleteContent } from "./contents";
 import {
   getScheduleEntryForContent,
   listCalendarEntries,
+  listEntriesInRange,
   listUnscheduledContents,
   scheduleContent,
   unscheduleEntry,
@@ -87,6 +88,25 @@ describe("schedule", () => {
       "C",
       "A",
     ]);
+  });
+
+  it("lists entries within a date range, inclusive", () => {
+    const [a, b, c] = ["A", "B", "C"].map((topic) =>
+      createContent(db, { topic, status: "saved" }),
+    );
+    schedule(a!.id, "2026-09-30");
+    schedule(b!.id, "2026-10-03");
+    schedule(c!.id, "2026-10-08");
+    expect(
+      listEntriesInRange(db, { from: "2026-10-01", to: "2026-10-07" }).map(
+        (e) => e.content.topic,
+      ),
+    ).toEqual(["B"]);
+    expect(
+      listEntriesInRange(db, { from: "2026-09-30", to: "2026-10-08" }).map(
+        (e) => e.content.topic,
+      ),
+    ).toEqual(["A", "B", "C"]);
   });
 
   it("reschedules and stamps postedAt only while posted", () => {

@@ -224,8 +224,8 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | M1  | Drafting                                          | Opus 5.5 · medium | ✅ done        |
 | M2  | Content                                           | Sonnet 5 · high   | ✅ done        |
 | M3  | Calendar                                          | Opus 5.5 · medium | ✅ done        |
-| M4  | Daily-use polish                                  | Sonnet 5 · medium | ⚪ not started |
-| L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | ⚪ not started |
+| M4  | Daily-use polish                                  | Sonnet 5 · medium | ✅ done        |
+| L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | 🟡 in progress |
 | M5  | Public release                                    | Opus 5.5 · high   | ⚪ not started |
 | R   | Pre-release security/code review                  | Fable 5.1 · high  | ⚪ not started |
 
@@ -329,14 +329,35 @@ warning on `/calendar`. Harmless; drop it once FullCalendar fixes it upstream.
 
 ### M4 — Daily-use polish
 
-- [ ] Home dashboard (this week, recent drafts, unscheduled)
-- [ ] Global search
-- [ ] JSON export / import backup
+- [x] Home dashboard (this week, recent drafts, unscheduled)
+      → `/` (replaces the placeholder): "This week" (a rolling 7-day `listEntriesInRange`),
+      "Recent drafts" (top 5 of `listDrafts`), "Unscheduled contents" (top 5 of
+      `listUnscheduledContents`), each linking to its full page
+- [x] Global search
+      → `/search?q=`, one query box over both contents (`listContents` search, already existed)
+      and drafts (`listDrafts` gained a `search` filter matching title/body); grouped results,
+      no separate index or fuzzy-search dependency — plain SQL `LIKE`, consistent with the library
+- [x] JSON export / import backup
+      → `/settings`: **Download backup** (`GET /api/export`, the whole db as one JSON file) and
+      **Restore from backup…** (`POST /api/import`, behind a confirm dialog — it replaces every
+      row). `packages/types` gained `backupSchema`; `packages/db` a `backup.ts` with
+      `exportBackup`/`importBackup` (one transaction: delete children→parents, insert
+      parents→children)
+
+**Result:** verified in the browser 2026-09-28 — home dashboard shows the real coffee-Reel draft
+and content from earlier milestones; `/search?q=coffee` matches both; `/api/export` returned all
+5 tables' rows, and posting that export straight to `/api/import` round-tripped without losing
+data (checked via the dashboard afterwards). Extracted the duplicated `timeAgo()` helper from
+the contents/drafts list pages into `src/lib/time.ts` while touching those files.
 
 ### L — Landing page
 
-- [ ] Copy (use `landing-page-copy` / `malecwiz-landing-page` skills)
-- [ ] Astro build, waitlist form, deploy
+- [x] Copy and full IA (hero, how it works, features, requirements, FAQ, footer)
+      → `apps/landing/src/pages/index.astro`, single page, plain Astro/Tailwind (no React
+      integration in this app) styled from the shared shadcn tokens; FAQ uses native
+      `<details>`. Waitlist form is UI-only for now (submit disabled) — no backend chosen yet.
+- [ ] Wire up the waitlist form to a real backend once one is chosen
+- [ ] Astro build, deploy
 
 ### M5 — Public release
 

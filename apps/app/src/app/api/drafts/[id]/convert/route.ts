@@ -53,7 +53,8 @@ export async function POST(
       signal: request.signal,
     })) {
       if (event.type === "done") text = event.text;
-      if (event.type === "error") return jsonError(event.message, 502, event.code);
+      if (event.type === "error")
+        return jsonError(event.message, 502, event.code);
     }
   } catch (error) {
     return providerError(ai, error);

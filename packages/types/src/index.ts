@@ -232,3 +232,17 @@ export const updateScheduleEntryInputSchema = z
 export type UpdateScheduleEntryInput = z.infer<
   typeof updateScheduleEntryInputSchema
 >;
+
+// ── Backup (GET /api/export, POST /api/import) ──────────────────────────────
+
+/** A full snapshot of the local database, restorable via POST /api/import. */
+export const backupSchema = z.object({
+  version: z.literal(1),
+  exportedAt: timestamp,
+  draftSessions: z.array(draftSessionSchema),
+  draftDocuments: z.array(draftDocumentSchema),
+  chatMessages: z.array(chatMessageSchema),
+  contents: z.array(contentSchema),
+  scheduleEntries: z.array(scheduleEntrySchema),
+});
+export type Backup = z.infer<typeof backupSchema>;

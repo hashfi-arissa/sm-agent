@@ -1,5 +1,8 @@
 import { getDb, listContents } from "@repo/db";
-import { contentLibraryFilterSchema, type ContentLibraryFilter } from "@repo/types";
+import {
+  contentLibraryFilterSchema,
+  type ContentLibraryFilter,
+} from "@repo/types";
 import { Badge } from "@repo/ui/components/badge";
 import { buttonVariants } from "@repo/ui/components/button";
 import { Card, CardContent } from "@repo/ui/components/card";
@@ -12,6 +15,8 @@ import { FileText, Plus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+
+import { timeAgo } from "@/lib/time";
 
 import { DeleteContentButton } from "./delete-content-button";
 
@@ -45,8 +50,7 @@ export default async function ContentsPage({
 }: PageProps<"/contents">) {
   await connection();
   const params = await searchParams;
-  const search =
-    typeof params.q === "string" ? params.q : "";
+  const search = typeof params.q === "string" ? params.q : "";
   const status =
     contentLibraryFilterSchema.safeParse(params.status).data ?? "all";
 
@@ -86,7 +90,10 @@ export default async function ContentsPage({
             </NativeSelectOption>
           ))}
         </NativeSelect>
-        <button type="submit" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <button
+          type="submit"
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+        >
           Filter
         </button>
       </form>
@@ -154,23 +161,4 @@ export default async function ContentsPage({
       )}
     </main>
   );
-}
-
-const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 365 * 24 * 3600],
-  ["month", 30 * 24 * 3600],
-  ["week", 7 * 24 * 3600],
-  ["day", 24 * 3600],
-  ["hour", 3600],
-  ["minute", 60],
-];
-
-function timeAgo(iso: string): string {
-  const seconds = (new Date(iso).getTime() - Date.now()) / 1000;
-  for (const [unit, size] of UNITS) {
-    if (Math.abs(seconds) >= size)
-      return rtf.format(Math.round(seconds / size), unit);
-  }
-  return "just now";
 }

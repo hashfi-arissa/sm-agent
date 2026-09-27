@@ -1,6 +1,17 @@
 // Queries for draft sessions: the chat, its messages and the draft document.
 import type { ChatMessage, DraftDocument, DraftSession } from "@repo/types";
-import { and, asc, count, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  isNull,
+  like,
+  or,
+  sql,
+} from "drizzle-orm";
 
 import type { Db } from "./client";
 import { chatMessages, draftDocuments, draftSessions } from "./schema";
@@ -71,14 +82,26 @@ export function getDraft(db: Db, id: string): Draft | null {
   return { session, document, messages };
 }
 
-/** Newest first. */
-export function listDrafts(db: Db): DraftListItem[] {
+/** Newest first; `search` matches the draft document's title or body. */
+export function listDrafts(
+  db: Db,
+  filter: { search?: string } = {},
+): DraftListItem[] {
   const messageCount = db
     .select({ sessionId: chatMessages.sessionId, n: count().as("n") })
     .from(chatMessages)
     .groupBy(chatMessages.sessionId)
     .as("message_count");
   const updatedAt = sql<string>`max(${draftSessions.updatedAt}, ${draftDocuments.updatedAt})`;
+
+  const conditions = [];
+  const search = filter.search?.trim();
+  if (search) {
+    const needle = `%${search}%`;
+    conditions.push(
+      or(like(draftDocuments.title, needle), like(draftDocuments.body, needle)),
+    );
+  }
 
   return db
     .select({
@@ -93,6 +116,7 @@ export function listDrafts(db: Db): DraftListItem[] {
     .from(draftSessions)
     .innerJoin(draftDocuments, eq(draftDocuments.sessionId, draftSessions.id))
     .leftJoin(messageCount, eq(messageCount.sessionId, draftSessions.id))
+    .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(updatedAt))
     .all();
 }

@@ -8,7 +8,9 @@ const NAV = [
   { href: "/drafts", label: "Drafts" },
   { href: "/contents", label: "Contents" },
   { href: "/calendar", label: "Calendar" },
+  { href: "/search", label: "Search" },
   { href: "/connect", label: "Codex" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function AppHeader() {

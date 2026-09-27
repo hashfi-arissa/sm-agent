@@ -99,6 +99,25 @@ describe("drafts", () => {
     expect(list[1]?.id).toBe(b.session.id);
   });
 
+  it("searches drafts by title or body", () => {
+    createDraft(db, { model: "m", effort: "low", title: "Morning routine" });
+    createDraft(db, {
+      model: "m",
+      effort: "low",
+      title: "Other",
+      body: "cold plunge",
+    });
+    createDraft(db, { model: "m", effort: "low", title: "Unrelated" });
+
+    expect(listDrafts(db, { search: "morning" }).map((d) => d.title)).toEqual([
+      "Morning routine",
+    ]);
+    expect(listDrafts(db, { search: "plunge" }).map((d) => d.title)).toEqual([
+      "Other",
+    ]);
+    expect(listDrafts(db, { search: "nope" })).toEqual([]);
+  });
+
   it("saves the document and deletes the whole draft", () => {
     const { session } = createDraft(db, { model: "m", effort: "low" });
     addChatMessage(db, { sessionId: session.id, role: "user", text: "hi" });

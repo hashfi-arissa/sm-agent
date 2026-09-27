@@ -33,7 +33,9 @@ describe("contents", () => {
       targetLength: 30,
     });
     expect(contentSchema.safeParse(content).success).toBe(true);
-    expect(getContent(db, content.id)).toMatchObject({ topic: "Morning routine" });
+    expect(getContent(db, content.id)).toMatchObject({
+      topic: "Morning routine",
+    });
     expect(getContent(db, crypto.randomUUID())).toBeNull();
   });
 
@@ -49,7 +51,9 @@ describe("contents", () => {
       targetLength: 60,
     });
     expect(saved).toMatchObject({ topic: "Saved topic", status: "saved" });
-    expect(saveContent(db, crypto.randomUUID(), { ...saved!, topic: "x" })).toBeNull();
+    expect(
+      saveContent(db, crypto.randomUUID(), { ...saved!, topic: "x" }),
+    ).toBeNull();
   });
 
   it("duplicates an item as a new draft", () => {
@@ -59,7 +63,11 @@ describe("contents", () => {
       status: "saved",
     });
     const copy = duplicateContent(db, content.id);
-    expect(copy).toMatchObject({ topic: "Original", hashtags: ["reels"], status: "draft" });
+    expect(copy).toMatchObject({
+      topic: "Original",
+      hashtags: ["reels"],
+      status: "draft",
+    });
     expect(copy?.id).not.toBe(content.id);
     expect(duplicateContent(db, crypto.randomUUID())).toBeNull();
   });
@@ -72,7 +80,11 @@ describe("contents", () => {
       status: "saved",
     });
     db.insert(scheduleEntries)
-      .values({ contentId: scheduled.id, date: "2026-10-01", status: "planned" })
+      .values({
+        contentId: scheduled.id,
+        date: "2026-10-01",
+        status: "planned",
+      })
       .run();
     // Timestamps can collide within a millisecond; make the update order unambiguous.
     const touch = (id: string, updatedAt: string) =>
@@ -87,9 +99,9 @@ describe("contents", () => {
     expect(listContents(db, { status: "saved" }).map((c) => c.topic)).toEqual([
       "Saved item",
     ]);
-    expect(listContents(db, { status: "scheduled" }).map((c) => c.topic)).toEqual([
-      "Scheduled item",
-    ]);
+    expect(
+      listContents(db, { status: "scheduled" }).map((c) => c.topic),
+    ).toEqual(["Scheduled item"]);
     expect(listContents(db, { search: "sched" }).map((c) => c.topic)).toEqual([
       "Scheduled item",
     ]);

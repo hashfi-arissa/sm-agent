@@ -4,7 +4,10 @@ import type { AIProvider } from "./provider";
 
 export { CodexProvider, type CodexProviderOptions } from "./codex/provider";
 export { type CodexLaunch, resolveCodexLaunch } from "./codex/launch";
-export { CONTENT_STRUCTURE_INSTRUCTIONS, DRAFTING_INSTRUCTIONS } from "./prompts";
+export {
+  CONTENT_STRUCTURE_INSTRUCTIONS,
+  DRAFTING_INSTRUCTIONS,
+} from "./prompts";
 export type * from "./provider";
 
 // One Codex process per server process; kept on globalThis so Next.js dev reloads reuse it.

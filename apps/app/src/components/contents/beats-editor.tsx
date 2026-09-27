@@ -110,7 +110,10 @@ export function BeatsEditor({
                 value={beat.seconds}
                 onChange={(e) =>
                   update(i, {
-                    seconds: Math.max(0, Math.min(180, Number(e.target.value) || 0)),
+                    seconds: Math.max(
+                      0,
+                      Math.min(180, Number(e.target.value) || 0),
+                    ),
                   })
                 }
               />

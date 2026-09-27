@@ -6,7 +6,7 @@ import type {
   ScheduleEntry,
   ScheduleStatus,
 } from "@repo/types";
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte } from "drizzle-orm";
 
 import type { Db } from "./client";
 import { contents, scheduleEntries } from "./schema";
@@ -34,6 +34,26 @@ export function listCalendarEntries(db: Db): CalendarEntry[] {
     .select(calendarColumns)
     .from(scheduleEntries)
     .innerJoin(contents, eq(contents.id, scheduleEntries.contentId))
+    .orderBy(asc(scheduleEntries.date), asc(scheduleEntries.time))
+    .all()
+    .map(toCalendarEntry);
+}
+
+/** Schedule entries with a date in `[from, to]` (inclusive, local `YYYY-MM-DD`), date/time order. */
+export function listEntriesInRange(
+  db: Db,
+  range: { from: string; to: string },
+): CalendarEntry[] {
+  return db
+    .select(calendarColumns)
+    .from(scheduleEntries)
+    .innerJoin(contents, eq(contents.id, scheduleEntries.contentId))
+    .where(
+      and(
+        gte(scheduleEntries.date, range.from),
+        lte(scheduleEntries.date, range.to),
+      ),
+    )
     .orderBy(asc(scheduleEntries.date), asc(scheduleEntries.time))
     .all()
     .map(toCalendarEntry);
