@@ -37,6 +37,10 @@ export const chatMessages = sqliteTable(
       .references(() => draftSessions.id, { onDelete: "cascade" }),
     role: text({ enum: ["user", "assistant"] }).notNull(),
     text: text().notNull(),
+    /** User messages: the Codex turn they started, so it can be reverted to regenerate. */
+    codexTurnId: text(),
+    /** Assistant messages: the reply was stopped before it finished. */
+    interrupted: integer({ mode: "boolean" }).notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [index("chat_messages_session_idx").on(t.sessionId, t.createdAt)],

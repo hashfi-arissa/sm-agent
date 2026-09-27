@@ -82,6 +82,7 @@ describe("CodexProvider (fake app-server)", () => {
     );
 
     expect(events).toEqual([
+      { type: "started", turnId: expect.any(String) },
       { type: "delta", text: "Hello" },
       { type: "delta", text: ", world" },
       { type: "done", text: "Hello, world", interrupted: false },
@@ -123,7 +124,63 @@ describe("CodexProvider (fake app-server)", () => {
     const events = await collect(
       p.sendMessage({ ...turn, threadId, text: "fail" }),
     );
-    expect(events).toEqual([{ type: "error", message: "boom" }]);
+    expect(events).toEqual([
+      { type: "started", turnId: expect.any(String) },
+      { type: "error", message: "boom", code: "other" },
+    ]);
+  });
+
+  it("flags usage-limit failures as rate_limited", async () => {
+    const p = makeProvider();
+    const { threadId } = await p.startThread({ model: "alpha" });
+    const events = await collect(
+      p.sendMessage({ ...turn, threadId, text: "limit" }),
+    );
+    expect(events.at(-1)).toEqual({
+      type: "error",
+      message: "You've hit your usage limit.",
+      code: "rate_limited",
+    });
+  });
+
+  it("reports not_installed from sendMessage when Codex can't be found", async () => {
+    const p = new CodexProvider({ launch: null });
+    const events = await collect(
+      p.sendMessage({ ...turn, threadId: "t", text: "hi" }),
+    );
+    expect(events).toEqual([
+      { type: "error", message: expect.any(String), code: "not_installed" },
+    ]);
+  });
+
+  it("reverts to before a turn, resuming the thread first after a restart", async () => {
+    const p = makeProvider();
+    const { threadId } = await p.startThread({ model: "alpha" });
+    const events = await collect(
+      p.sendMessage({ ...turn, threadId, text: "hi" }),
+    );
+    const started = events.find((e) => e.type === "started");
+    await p.dispose();
+
+    await p.revertThread({
+      threadId,
+      beforeTurnId: started!.turnId,
+      model: "alpha",
+    });
+    const methods = (await rpcCalls(p)).map((c) => c.method);
+    expect(methods.slice(0, 3)).toEqual([
+      "initialize",
+      "thread/resume",
+      "thread/revert",
+    ]);
+  });
+
+  it("deletes threads", async () => {
+    const p = makeProvider();
+    const { threadId } = await p.startThread({ model: "alpha" });
+    await p.deleteThread(threadId);
+    const del = (await rpcCalls(p)).find((c) => c.method === "thread/delete");
+    expect(del?.params).toEqual({ threadId });
   });
 
   it("recovers after a crash by restarting and resuming the thread", async () => {

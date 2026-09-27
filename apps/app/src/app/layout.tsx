@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@repo/ui/globals.css";
 import { cn } from "@repo/ui/lib/utils";
 
+import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const fontSans = Geist({
@@ -33,7 +34,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       )}
     >
       <body className="flex min-h-full flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AppHeader />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

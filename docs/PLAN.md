@@ -1,7 +1,7 @@
 # Social Media Agent — Project Plan
 
 > Source of truth for scope, architecture and milestones. Update the **Status** column
-> and checklists as work lands. Last revised: 2026-09-27.
+> and checklists as work lands. Last revised: 2026-09-27 (M1 done).
 
 ## 1. Product summary
 
@@ -49,6 +49,8 @@ not the OpenAI API. Consequences:
 | Streamed reply         | `item/started` (agentMessage `phase`), `item/agentMessage/delta`, `item/completed`, `turn/completed` |
 | Stop                   | `turn/interrupt` {threadId, turnId} → `turn/completed` with status `interrupted`                     |
 | Reopen chat            | `thread/resume` with `threadId` (needed after the app-server process restarts)                       |
+| Regenerate             | `thread/revert` {threadId, beforeTurnId} drops that turn and later ones from Codex's history (M1)    |
+| Delete chat            | `thread/delete` {threadId} — removes it from the user's Codex history too (M1)                       |
 
 Full typed protocol: `packages/ai/src/codex/protocol/` (regenerate with `pnpm --filter @repo/ai codex:types`
 after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
@@ -56,7 +58,7 @@ after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
 **Known limitations (M0):**
 
 - Drafting threads are persisted by Codex (needed for `thread/resume`), so they also appear in the
-  user's own Codex session history.
+  user's own Codex session history until the draft is deleted in the app (M1 calls `thread/delete`).
 - The read-only sandbox blocks writes and commands, but Codex can still read files outside the
   scratch dir; the drafting instructions tell it not to.
 
@@ -219,7 +221,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | #   | Milestone                                         | Model · effort    | Status         |
 | --- | ------------------------------------------------- | ----------------- | -------------- |
 | M0  | Foundation                                        | Opus 5.5 · high   | ✅ done        |
-| M1  | Drafting                                          | Opus 5.5 · medium | ⚪ not started |
+| M1  | Drafting                                          | Opus 5.5 · medium | ✅ done        |
 | M2  | Content                                           | Sonnet 5 · high   | ⚪ not started |
 | M3  | Calendar                                          | Opus 5.5 · medium | ⚪ not started |
 | M4  | Daily-use polish                                  | Sonnet 5 · medium | ⚪ not started |
@@ -255,11 +257,24 @@ model list with efforts, and a test prompt streams a reply end to end.
 
 ### M1 — Drafting
 
-- [ ] New draft: model + effort pickers (from `model/list`), locked after first message
-- [ ] Chat panel with streaming, stop, regenerate; persist messages
-- [ ] Draft doc panel (markdown editor), "Insert reply into doc", Save draft
-- [ ] Draft list; reopen a session (`thread/resume`)
-- [ ] Error states: Codex missing, signed out, rate-limited
+- [x] New draft: model + effort pickers (from `model/list`), locked after first message
+      → session is created on the first message (or first save); URL switches to `/drafts/[id]` in place.
+      Before the first message `PATCH /api/drafts/[id]` may change them; after it the server returns 409.
+- [x] Chat panel with streaming, stop, regenerate; persist messages
+      → stopped replies are kept (flagged `interrupted`); Regenerate/Retry reverts the Codex turn
+      (`thread/revert`) so the old reply leaves the model's context. One turn per draft at a time.
+- [x] Draft doc panel (markdown editor), "Insert reply into doc", Save draft
+      → Write/Preview tabs, inserts at the cursor, Ctrl/Cmd+S, unsaved-changes warning on tab close
+- [x] Draft list; reopen a session (`thread/resume`); delete (also deletes the Codex thread)
+- [x] Error states: Codex missing, signed out, rate-limited
+      → page banner from `getStatus()`, per-turn errors carry an `AIErrorCode` mapped from
+      `codexErrorInfo` (usage/rate limit, unauthorized, context full) with Retry where it helps
+
+**Result:** verified in the browser 2026-09-27 on GPT-6-Astra @ low — new draft → streamed reply →
+Regenerate (Codex then quoted the _regenerated_ hook, confirming the revert) → Insert into doc → Save →
+reload; Stop keeps the partial reply; after a server restart a follow-up resumed the thread with context.
+Signed-out / not-installed / rate-limited paths are covered by provider tests (fake app-server), not
+reproduced live.
 
 ### M2 — Content
 

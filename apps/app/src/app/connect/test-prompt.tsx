@@ -12,6 +12,8 @@ import { Textarea } from "@repo/ui/components/textarea";
 import { CircleAlert, LoaderCircle, Send, Square } from "lucide-react";
 import { useRef, useState } from "react";
 
+import { readNdjson } from "@/lib/ndjson";
+
 type RunState = "idle" | "streaming" | "done" | "stopped" | "error";
 
 export function TestPrompt({ models }: { models: ModelInfo[] }) {
@@ -59,7 +61,8 @@ export function TestPrompt({ models }: { models: ModelInfo[] }) {
       }
 
       let finalState: RunState = "done";
-      for await (const event of readEvents(res.body)) {
+      for await (const event of readNdjson<ChatEvent>(res.body)) {
+        if (event.type === "started") continue;
         if (event.type === "delta") setOutput((prev) => prev + event.text);
         else if (event.type === "done") {
           if (event.text) setOutput(event.text);
@@ -193,22 +196,4 @@ export function TestPrompt({ models }: { models: ModelInfo[] }) {
       )}
     </form>
   );
-}
-
-/** Parses the NDJSON ChatEvent stream from /api/codex/test. */
-async function* readEvents(body: ReadableStream<Uint8Array>) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (line.trim()) yield JSON.parse(line) as ChatEvent;
-    }
-  }
-  if (buffer.trim()) yield JSON.parse(buffer) as ChatEvent;
 }

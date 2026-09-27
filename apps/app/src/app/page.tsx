@@ -1,5 +1,5 @@
 import { buttonVariants } from "@repo/ui/components/button";
-import { ArrowRight } from "lucide-react";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 
 // Placeholder home until the dashboard lands (M4).
@@ -12,10 +12,15 @@ export default function Home() {
       <p className="text-muted-foreground">
         Draft, structure and schedule your Reels with Codex.
       </p>
-      <Link href="/connect" className={buttonVariants()}>
-        Connect Codex
-        <ArrowRight data-icon="inline-end" />
-      </Link>
+      <div className="flex gap-2">
+        <Link href="/drafts/new" className={buttonVariants()}>
+          <Plus data-icon="inline-start" />
+          New draft
+        </Link>
+        <Link href="/drafts" className={buttonVariants({ variant: "outline" })}>
+          All drafts
+        </Link>
+      </div>
     </main>
   );
 }

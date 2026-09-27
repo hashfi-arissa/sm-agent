@@ -7,10 +7,12 @@ import path from "node:path";
 import { AsyncQueue } from "../async-queue";
 import type {
   AccountInfo,
+  AIErrorCode,
   AIProvider,
   ChatEvent,
   ModelInfo,
   ProviderStatus,
+  RevertThreadOptions,
   SendMessageOptions,
   ThreadOptions,
 } from "../provider";
@@ -18,6 +20,7 @@ import { type CodexLaunch, resolveCodexLaunch } from "./launch";
 import type { InitializeParams } from "./protocol/InitializeParams";
 import type { InitializeResponse } from "./protocol/InitializeResponse";
 import type { Account } from "./protocol/v2/Account";
+import type { CodexErrorInfo } from "./protocol/v2/CodexErrorInfo";
 import type { AgentMessageDeltaNotification } from "./protocol/v2/AgentMessageDeltaNotification";
 import type { GetAccountResponse } from "./protocol/v2/GetAccountResponse";
 import type { ItemCompletedNotification } from "./protocol/v2/ItemCompletedNotification";
@@ -25,10 +28,12 @@ import type { ItemStartedNotification } from "./protocol/v2/ItemStartedNotificat
 import type { LoginAccountResponse } from "./protocol/v2/LoginAccountResponse";
 import type { ModelListResponse } from "./protocol/v2/ModelListResponse";
 import type { ThreadResumeParams } from "./protocol/v2/ThreadResumeParams";
+import type { ThreadRevertParams } from "./protocol/v2/ThreadRevertParams";
 import type { ThreadStartParams } from "./protocol/v2/ThreadStartParams";
 import type { ThreadStartResponse } from "./protocol/v2/ThreadStartResponse";
 import type { TurnCompletedNotification } from "./protocol/v2/TurnCompletedNotification";
 import type { TurnStartParams } from "./protocol/v2/TurnStartParams";
+import type { TurnStartedNotification } from "./protocol/v2/TurnStartedNotification";
 import type { TurnStartResponse } from "./protocol/v2/TurnStartResponse";
 import { JsonRpcConnection } from "./rpc";
 
@@ -151,6 +156,24 @@ export class CodexProvider implements AIProvider {
     return queue;
   }
 
+  async revertThread({
+    threadId,
+    beforeTurnId,
+    model,
+    instructions,
+  }: RevertThreadOptions): Promise<void> {
+    const session = await this.connect();
+    await this.ensureLoaded(session, threadId, model, instructions);
+    const params: ThreadRevertParams = { threadId, beforeTurnId };
+    await session.rpc.request("thread/revert", params);
+  }
+
+  async deleteThread(threadId: string): Promise<void> {
+    const session = await this.connect();
+    await session.rpc.request("thread/delete", { threadId });
+    session.loadedThreads.delete(threadId);
+  }
+
   async dispose(): Promise<void> {
     const pending = this.session;
     this.session = null;
@@ -187,6 +210,24 @@ export class CodexProvider implements AIProvider {
       approvalPolicy: "never",
       developerInstructions: instructions ?? null,
     } satisfies Partial<ThreadStartParams & ThreadResumeParams>;
+  }
+
+  /** Threads started by an earlier app-server process must be resumed before use. */
+  private async ensureLoaded(
+    session: Session,
+    threadId: string,
+    model: string,
+    instructions: string | undefined,
+  ) {
+    if (session.loadedThreads.has(threadId)) return;
+    const resume: ThreadResumeParams = {
+      ...this.threadConfig(instructions),
+      threadId,
+      model,
+      excludeTurns: true,
+    };
+    await session.rpc.request("thread/resume", resume);
+    session.loadedThreads.add(threadId);
   }
 
   private connect(): Promise<Session> {
@@ -274,7 +315,11 @@ export class CodexProvider implements AIProvider {
     try {
       session = await this.connect();
     } catch (error) {
-      finish({ type: "error", message: errorMessage(error) });
+      finish({
+        type: "error",
+        message: errorMessage(error),
+        code: this.launch() ? "other" : "not_installed",
+      });
       return;
     }
     const { rpc, child } = session;
@@ -284,13 +329,22 @@ export class CodexProvider implements AIProvider {
     let streamed = "";
     let lastItemId: string | null = null;
     let finalText = "";
+    // The turn id arrives with the turn/start response or the turn/started notification,
+    // whichever comes first.
+    const markStarted = (id: string) => {
+      if (turnId || finished) return;
+      turnId = id;
+      queue.push({ type: "started", turnId: id });
+    };
 
     const unsubscribe = rpc.onNotification((method, params) => {
       const p = params as { threadId?: string; turnId?: string };
       if (p?.threadId !== threadId) return;
       if (turnId && p.turnId && p.turnId !== turnId) return;
 
-      if (method === "item/started") {
+      if (method === "turn/started") {
+        markStarted((params as TurnStartedNotification).turn.id);
+      } else if (method === "item/started") {
         const { item } = params as ItemStartedNotification;
         if (item.type === "agentMessage") phases.set(item.id, item.phase);
       } else if (method === "item/agentMessage/delta") {
@@ -316,6 +370,7 @@ export class CodexProvider implements AIProvider {
           finish({
             type: "error",
             message: turn.error?.message ?? "Codex turn failed",
+            code: errorCode(turn.error?.codexErrorInfo ?? null),
           });
         } else {
           finish({
@@ -327,7 +382,11 @@ export class CodexProvider implements AIProvider {
       }
     });
     const onExit = () =>
-      finish({ type: "error", message: "Codex stopped unexpectedly" });
+      finish({
+        type: "error",
+        message: "Codex stopped unexpectedly",
+        code: "other",
+      });
     child.once("exit", onExit);
 
     const interrupt = () => {
@@ -337,16 +396,12 @@ export class CodexProvider implements AIProvider {
     };
 
     try {
-      if (!session.loadedThreads.has(threadId)) {
-        const resume: ThreadResumeParams = {
-          ...this.threadConfig(options.instructions),
-          threadId,
-          model: options.model,
-          excludeTurns: true,
-        };
-        await rpc.request("thread/resume", resume);
-        session.loadedThreads.add(threadId);
-      }
+      await this.ensureLoaded(
+        session,
+        threadId,
+        options.model,
+        options.instructions,
+      );
 
       const turn: TurnStartParams = {
         threadId,
@@ -355,18 +410,33 @@ export class CodexProvider implements AIProvider {
         effort: options.effort,
       };
       const res = await rpc.request<TurnStartResponse>("turn/start", turn);
-      turnId = res.turn.id;
+      markStarted(res.turn.id);
 
       if (signal?.aborted) interrupt();
       signal?.addEventListener("abort", interrupt, { once: true });
       await done;
     } catch (error) {
-      finish({ type: "error", message: errorMessage(error) });
+      finish({ type: "error", message: errorMessage(error), code: "other" });
     } finally {
       unsubscribe();
       child.removeListener("exit", onExit);
       signal?.removeEventListener("abort", interrupt);
     }
+  }
+}
+
+function errorCode(info: CodexErrorInfo | null): AIErrorCode {
+  switch (info) {
+    case "usageLimitExceeded":
+    case "rateLimitExceeded":
+    case "sessionBudgetExceeded":
+      return "rate_limited";
+    case "unauthorized":
+      return "signed_out";
+    case "contextWindowExceeded":
+      return "context_full";
+    default:
+      return "other";
   }
 }
 

@@ -1,6 +1,6 @@
 // Minimal stand-in for `codex app-server` used by provider tests. Speaks the same
 // newline-delimited JSON-RPC. Special turn inputs: "slow" (waits for interrupt),
-// "fail" (turn fails), "crash" (process exits mid-turn).
+// "fail" (turn fails), "limit" (usage limit reached), "crash" (process exits mid-turn).
 import { createInterface } from "node:readline";
 
 const calls = [];
@@ -85,15 +85,34 @@ const handlers = {
     loadedThreads.add(threadId);
     return { thread: { id: threadId } };
   },
+  "thread/revert": ({ threadId }) => {
+    if (!loadedThreads.has(threadId))
+      throw { code: -32600, message: `thread not loaded: ${threadId}` };
+    return { thread: { id: threadId } };
+  },
+  "thread/delete": ({ threadId }) => {
+    loadedThreads.delete(threadId);
+    return {};
+  },
   "turn/start": ({ threadId, input }) => {
     if (!loadedThreads.has(threadId))
       throw { code: -32600, message: `thread not found: ${threadId}` };
     const turnId = `turn_${++turnCounter}`;
     const text = input[0].text;
     setImmediate(() => {
+      notify("turn/started", {
+        threadId,
+        turn: { id: turnId, items: [], status: "inProgress", error: null },
+      });
       if (text === "crash") process.exit(1);
       if (text === "fail")
         return completeTurn(threadId, turnId, "failed", { message: "boom" });
+      if (text === "limit") {
+        return completeTurn(threadId, turnId, "failed", {
+          message: "You've hit your usage limit.",
+          codexErrorInfo: "usageLimitExceeded",
+        });
+      }
       if (text === "slow") {
         agentMessage(threadId, turnId, "m_slow", "final_answer", ["partial"]);
         slowTurn = { threadId, turnId };

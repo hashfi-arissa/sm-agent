@@ -28,6 +28,10 @@ export const chatMessageSchema = z.object({
   sessionId: id,
   role: chatRoleSchema,
   text: z.string(),
+  /** User messages: the Codex turn they started (used to regenerate the reply). */
+  codexTurnId: z.string().nullable(),
+  /** Assistant messages: stopped before the reply finished. */
+  interrupted: z.boolean(),
   createdAt: timestamp,
 });
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
@@ -113,6 +117,40 @@ export function displayStatus(
 }
 
 // ── API inputs ───────────────────────────────────────────────────────────────
+
+const draftTitle = z.string().trim().max(200);
+const draftBody = z.string().max(200_000);
+
+/** POST /api/drafts — creates a session; model + effort are locked from here on. */
+export const createDraftInputSchema = z.object({
+  model: z.string().min(1),
+  effort: z.string().min(1),
+  title: draftTitle.default(""),
+  body: draftBody.default(""),
+});
+export type CreateDraftInput = z.input<typeof createDraftInputSchema>;
+
+/** PATCH /api/drafts/[id] — only allowed before the first message. */
+export const updateDraftModelInputSchema = z.object({
+  model: z.string().min(1),
+  effort: z.string().min(1),
+});
+export type UpdateDraftModelInput = z.infer<typeof updateDraftModelInputSchema>;
+
+/** POST /api/drafts/[id]/messages — sends a chat message and streams the reply. */
+export const sendDraftMessageInputSchema = z.object({
+  text: z.string().trim().min(1, "Write a message first").max(20_000),
+});
+export type SendDraftMessageInput = z.infer<typeof sendDraftMessageInputSchema>;
+
+/** PUT /api/drafts/[id]/document — saves the draft document. */
+export const saveDraftDocumentInputSchema = z.object({
+  title: draftTitle,
+  body: draftBody,
+});
+export type SaveDraftDocumentInput = z.infer<
+  typeof saveDraftDocumentInputSchema
+>;
 
 /** POST /api/codex/test — one-off prompt from the Connect screen. */
 export const codexTestInputSchema = z.object({
