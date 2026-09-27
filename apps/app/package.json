@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@fullcalendar/react": "7.1.0",
     "@repo/ai": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/types": "workspace:*",
@@ -22,6 +23,7 @@
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "temporal-polyfill": "^1.0.5",
     "zod": "^4.6.5"
   },
   "devDependencies": {

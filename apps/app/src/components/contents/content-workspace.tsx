@@ -1,6 +1,6 @@
 "use client";
 
-import type { Content } from "@repo/types";
+import type { Content, ScheduleEntry } from "@repo/types";
 import { REEL_LENGTHS, type Beat, type ReelLength } from "@repo/types";
 import { Button } from "@repo/ui/components/button";
 import { Input } from "@repo/ui/components/input";
@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from "react";
 import { ApiRequestError, ensureOk } from "@/lib/fetch-client";
 
 import { BeatsEditor } from "./beats-editor";
+import { ScheduleControl } from "./schedule-control";
 
 interface Fields {
   topic: string;
@@ -61,10 +62,13 @@ function parseHashtags(text: string): string[] {
 export function ContentWorkspace({
   content,
   sourceDraftHref,
+  scheduleEntry,
 }: {
   content: Content | null;
   /** Link back to the draft session this content was converted from, if any. */
   sourceDraftHref: string | null;
+  /** The content's calendar entry, if it is scheduled. */
+  scheduleEntry: ScheduleEntry | null;
 }) {
   const router = useRouter();
   const initial = fieldsOf(content);
@@ -88,7 +92,7 @@ export function ContentWorkspace({
 
   const contentIdRef = useRef<string | null>(content?.id ?? null);
   const creatingRef = useRef<Promise<string> | null>(null);
-  const [hasId, setHasId] = useState(!!content);
+  const [contentId, setContentId] = useState(content?.id ?? null);
 
   const current: Fields = {
     topic,
@@ -116,7 +120,7 @@ export function ContentWorkspace({
       );
       const { id } = (await res.json()) as { id: string };
       contentIdRef.current = id;
-      setHasId(true);
+      setContentId(id);
       window.history.replaceState(null, "", `/contents/${id}`);
       document.title = `${topic || "Untitled content"} · Social Media Agent`;
       return id;
@@ -215,7 +219,7 @@ export function ContentWorkspace({
           >
             {status}
           </span>
-          {hasId && (
+          {contentId && (
             <Button
               type="button"
               variant="outline"
@@ -224,7 +228,10 @@ export function ContentWorkspace({
               disabled={duplicating}
             >
               {duplicating ? (
-                <LoaderCircle className="animate-spin" data-icon="inline-start" />
+                <LoaderCircle
+                  className="animate-spin"
+                  data-icon="inline-start"
+                />
               ) : (
                 <Copy data-icon="inline-start" />
               )}
@@ -248,6 +255,12 @@ export function ContentWorkspace({
       {duplicateError && (
         <p className="text-destructive text-sm">{duplicateError}</p>
       )}
+
+      <ScheduleControl
+        contentId={contentId}
+        saved={everSaved}
+        initialEntry={scheduleEntry}
+      />
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="content-topic">Topic</Label>
@@ -292,7 +305,9 @@ export function ContentWorkspace({
           id="content-length"
           className="w-fit"
           value={targetLength}
-          onChange={(e) => setTargetLength(Number(e.target.value) as ReelLength)}
+          onChange={(e) =>
+            setTargetLength(Number(e.target.value) as ReelLength)
+          }
         >
           {REEL_LENGTHS.map((n) => (
             <NativeSelectOption key={n} value={n}>

@@ -1,7 +1,7 @@
 # Social Media Agent — Project Plan
 
 > Source of truth for scope, architecture and milestones. Update the **Status** column
-> and checklists as work lands. Last revised: 2026-09-27 (M2 done).
+> and checklists as work lands. Last revised: 2026-09-27 (M3 done).
 
 ## 1. Product summary
 
@@ -64,20 +64,20 @@ after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
 
 ## 3. Decisions
 
-| Topic           | Decision                                                                    | Why                                                                          |
-| --------------- | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| Repo            | pnpm + Turborepo monorepo                                                   | App, landing page and shared packages in one place                           |
-| App             | Next.js 16 (App Router), runs on `localhost`                                | Route handlers can spawn `codex` and stream SSE                              |
-| Desktop (M5)    | Electron                                                                    | Runs the Node backend + Codex bridge as-is (Tauri would need a Node sidecar) |
-| Landing         | Astro 7, static                                                             | Fast marketing site; waitlist now, downloads later                           |
-| DB              | SQLite (`better-sqlite3`) + Drizzle ORM                                     | Local file, zero setup; can move to Postgres/Turso later                     |
-| UI              | Tailwind 4 + shadcn/ui                                                      | Shared across app and landing                                                |
-| Calendar        | FullCalendar 7 (`daygrid`, `timegrid`, `interaction`)                       | Built-in external drag (tray → calendar) and event drag                      |
-| Other DnD       | `@dnd-kit`                                                                  | Non-calendar drag lists                                                      |
-| Validation      | zod 4                                                                       | Shared schemas between db, API and UI                                        |
-| AI access       | `AIProvider` interface, Codex as the only implementation                    | Lets us add API-key / other providers for the public release                 |
-| Schedule dates  | Store local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`)               | Avoids time-zone drift for a personal planner                                |
-| State placement | Content has only `draft`/`saved`; scheduling state lives on `ScheduleEntry` | One source of truth — "scheduled"/"posted" are derived                       |
+| Topic           | Decision                                                                          | Why                                                                          |
+| --------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Repo            | pnpm + Turborepo monorepo                                                         | App, landing page and shared packages in one place                           |
+| App             | Next.js 16 (App Router), runs on `localhost`                                      | Route handlers can spawn `codex` and stream SSE                              |
+| Desktop (M5)    | Electron                                                                          | Runs the Node backend + Codex bridge as-is (Tauri would need a Node sidecar) |
+| Landing         | Astro 7, static                                                                   | Fast marketing site; waitlist now, downloads later                           |
+| DB              | SQLite (`better-sqlite3`) + Drizzle ORM                                           | Local file, zero setup; can move to Postgres/Turso later                     |
+| UI              | Tailwind 4 + shadcn/ui                                                            | Shared across app and landing                                                |
+| Calendar        | FullCalendar 7 — `@fullcalendar/react` bundles `daygrid`/`timegrid`/`interaction` | Built-in external drag (tray → calendar) and event drag                      |
+| Other DnD       | `@dnd-kit`                                                                        | Non-calendar drag lists                                                      |
+| Validation      | zod 4                                                                             | Shared schemas between db, API and UI                                        |
+| AI access       | `AIProvider` interface, Codex as the only implementation                          | Lets us add API-key / other providers for the public release                 |
+| Schedule dates  | Store local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`)                     | Avoids time-zone drift for a personal planner                                |
+| State placement | Content has only `draft`/`saved`; scheduling state lives on `ScheduleEntry`       | One source of truth — "scheduled"/"posted" are derived                       |
 
 Package versions at planning time: next 16.3, astro 7.3, turbo 2.11, drizzle-orm 0.45,
 better-sqlite3 13.0, @fullcalendar/core 7.1, @dnd-kit/core 6.3, electron 44.4,
@@ -223,7 +223,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | M0  | Foundation                                        | Opus 5.5 · high   | ✅ done        |
 | M1  | Drafting                                          | Opus 5.5 · medium | ✅ done        |
 | M2  | Content                                           | Sonnet 5 · high   | ✅ done        |
-| M3  | Calendar                                          | Opus 5.5 · medium | ⚪ not started |
+| M3  | Calendar                                          | Opus 5.5 · medium | ✅ done        |
 | M4  | Daily-use polish                                  | Sonnet 5 · medium | ⚪ not started |
 | L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | ⚪ not started |
 | M5  | Public release                                    | Opus 5.5 · high   | ⚪ not started |
@@ -297,14 +297,35 @@ reproduced live.
 search (`?q=`) and status filter both narrow correctly. Convert to Content run live against a real
 saved draft (GPT-6-Astra): Codex returned well-formed hook/4 beats/CTA/caption/hashtags, the new
 content linked back to "Open source draft" correctly (resolving `Content.sourceDraftId`, which
-points at the draft *document* id, to the session id used in `/drafts/[id]`).
+points at the draft _document_ id, to the session id used in `/drafts/[id]`).
 
 ### M3 — Calendar
 
-- [ ] Month + week views
-- [ ] Tray of saved, unscheduled content; drag to schedule
-- [ ] Drag to reschedule, drag back to tray to unschedule
-- [ ] Event quick-peek, open content, mark posted / missed
+- [x] Month + week views
+      → `/calendar`, FullCalendar 7 (`@fullcalendar/react` + its `daygrid`/`timegrid`/`interaction`
+      subpaths; there are no separate v7 plugin packages) with the `classic` theme recoloured from the
+      shadcn tokens (`components/calendar/calendar.css`), so it follows dark mode. `?date=` opens on a day.
+- [x] Tray of saved, unscheduled content; drag to schedule
+      → `Draggable` with `create: false`; the `drop` handler `POST /api/schedule`s and the server
+      refuses anything not `saved` (409). Month-view drops are all-day (`time = null`), week time-slot
+      drops store `HH:mm`. The content editor also gets a keyboard-friendly **Schedule…** date/time form
+- [x] Drag to reschedule, drag back to tray to unschedule
+      → `eventDrop` → `PATCH /api/schedule/[id]` (reverts on error); an event released over the tray
+      (`eventDragStop` hit-test) → `DELETE`. Durations aren't editable
+- [x] Event quick-peek, open content, mark posted / missed
+      → dialog with hook, date/time reschedule form, Mark posted / Mark missed / Back to scheduled,
+      Unschedule, Open content. `postedAt` is stamped on → posted and cleared when leaving it.
+      Colours: planned = primary, posted = green, missed = destructive
+
+**Result:** verified in the browser 2026-09-27 — tray → month day (all-day) and tray → week 10:00
+slot (stored `10:00`), event → tray unschedules, quick-peek Mark posted (green, timestamp shown),
+reschedule via the dialog form kept `postedAt`, editor **Schedule…** → "Scheduled for Tue, Oct 6 ·
+18:30" → "Open in calendar" lands on that month; library `?status=posted` picks up the derived
+status. API: draft content → 409, bad date/time → 400. All entries are loaded at once (fine for a
+personal planner; add a `from/to` range query if it grows).
+
+**Known issue:** FullCalendar 7.1 renders `inert=""`, which React 19 logs as a dev-only console
+warning on `/calendar`. Harmless; drop it once FullCalendar fixes it upstream.
 
 ### M4 — Daily-use polish
 

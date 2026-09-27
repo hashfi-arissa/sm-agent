@@ -16,6 +16,7 @@ export default async function NewContentPage() {
       key={crypto.randomUUID()}
       content={null}
       sourceDraftHref={null}
+      scheduleEntry={null}
     />
   );
 }

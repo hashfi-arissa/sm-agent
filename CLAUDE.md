@@ -68,3 +68,6 @@ For UI changes, also check it in the browser (`/connect` exercises Codex end to 
   `request.signal` through so closing the request interrupts the Codex turn.
 - Codex model ids and effort values come from `model/list` at runtime — never hardcode them.
 - Schedule dates are stored as local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`), not UTC timestamps.
+- FullCalendar 7 has no separate plugin packages: import them from `@fullcalendar/react/<plugin>`
+  (`daygrid`, `timegrid`, `interaction`, `themes/classic`); the theme is recoloured in
+  `apps/app/src/components/calendar/calendar.css`.

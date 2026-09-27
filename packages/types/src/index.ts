@@ -102,6 +102,11 @@ export const scheduleEntrySchema = z.object({
 });
 export type ScheduleEntry = z.infer<typeof scheduleEntrySchema>;
 
+/** A schedule entry plus the content fields the calendar shows. */
+export interface CalendarEntry extends ScheduleEntry {
+  content: Pick<Content, "id" | "topic" | "hook" | "targetLength">;
+}
+
 /** Status shown in the UI, derived from Content + its ScheduleEntry. */
 export type DisplayStatus =
   "draft" | "saved" | "scheduled" | "posted" | "missed";
@@ -199,3 +204,31 @@ export const contentLibraryFilterSchema = z.enum([
   "missed",
 ]);
 export type ContentLibraryFilter = z.infer<typeof contentLibraryFilterSchema>;
+
+const scheduleDate = z.iso.date();
+const scheduleTime = z.iso.time({ precision: -1 });
+
+/** POST /api/schedule — puts a saved content item on the calendar. */
+export const scheduleContentInputSchema = z.object({
+  contentId: id,
+  date: scheduleDate,
+  /** null = all-day. */
+  time: scheduleTime.nullable().default(null),
+});
+export type ScheduleContentInput = z.input<typeof scheduleContentInputSchema>;
+
+/** PATCH /api/schedule/[id] — reschedules and/or marks the entry planned/posted/missed. */
+export const updateScheduleEntryInputSchema = z
+  .object({
+    date: scheduleDate.optional(),
+    time: scheduleTime.nullable().optional(),
+    status: scheduleStatusSchema.optional(),
+  })
+  .refine(
+    (v) =>
+      v.date !== undefined || v.time !== undefined || v.status !== undefined,
+    "Nothing to update",
+  );
+export type UpdateScheduleEntryInput = z.infer<
+  typeof updateScheduleEntryInputSchema
+>;

@@ -1,4 +1,9 @@
-import { getContent, getDb, getDraftSessionIdForDocument } from "@repo/db";
+import {
+  getContent,
+  getDb,
+  getDraftSessionIdForDocument,
+  getScheduleEntryForContent,
+} from "@repo/db";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
@@ -32,6 +37,7 @@ export default async function ContentPage({
       key={content.id}
       content={content}
       sourceDraftHref={sourceDraftHref ? `/drafts/${sourceDraftHref}` : null}
+      scheduleEntry={getScheduleEntryForContent(db, content.id)}
     />
   );
 }
