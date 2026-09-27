@@ -8,13 +8,16 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "codex:types": "codex app-server generate-ts --out src/codex/protocol"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@types/node": "^22",
     "eslint": "^9.39.5",
     "typescript": "^5.9.3",
-    "@types/node": "^22"
+    "vitest": "^5.0.2"
   }
 }
