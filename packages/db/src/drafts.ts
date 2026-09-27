@@ -196,6 +196,19 @@ export function saveDraftDocument(
   );
 }
 
+/** Resolves a draft document id (Content.sourceDraftId) to its session id, for linking back. */
+export function getDraftSessionIdForDocument(
+  db: Db,
+  documentId: string,
+): string | null {
+  const document = db
+    .select({ sessionId: draftDocuments.sessionId })
+    .from(draftDocuments)
+    .where(eq(draftDocuments.id, documentId))
+    .get();
+  return document?.sessionId ?? null;
+}
+
 /** Deletes the draft (messages and document cascade). Returns the deleted session. */
 export function deleteDraft(db: Db, id: string): DraftSession | null {
   return (

@@ -159,3 +159,43 @@ export const codexTestInputSchema = z.object({
   prompt: z.string().trim().min(1, "Write a prompt first").max(4000),
 });
 export type CodexTestInput = z.infer<typeof codexTestInputSchema>;
+
+const contentTopic = z.string().trim().max(200);
+const contentField = z.string().max(4000);
+const hashtag = z.string().trim().min(1).max(100);
+
+/** POST /api/contents — creates a content item, from scratch or pre-filled (e.g. by Convert). */
+export const createContentInputSchema = z.object({
+  sourceDraftId: id.nullable().default(null),
+  topic: contentTopic.default(""),
+  hook: contentField.default(""),
+  beats: z.array(beatSchema).default([]),
+  cta: contentField.default(""),
+  caption: contentField.default(""),
+  hashtags: z.array(hashtag).default([]),
+  targetLength: reelLengthSchema.default(30),
+});
+export type CreateContentInput = z.input<typeof createContentInputSchema>;
+
+/** PUT /api/contents/[id] — saves the content's fields and marks it `saved`. */
+export const updateContentInputSchema = z.object({
+  topic: contentTopic,
+  hook: contentField,
+  beats: z.array(beatSchema),
+  cta: contentField,
+  caption: contentField,
+  hashtags: z.array(hashtag),
+  targetLength: reelLengthSchema,
+});
+export type UpdateContentInput = z.infer<typeof updateContentInputSchema>;
+
+/** Library search/filter — `status` filters on the derived DisplayStatus, "all" means no filter. */
+export const contentLibraryFilterSchema = z.enum([
+  "all",
+  "draft",
+  "saved",
+  "scheduled",
+  "posted",
+  "missed",
+]);
+export type ContentLibraryFilter = z.infer<typeof contentLibraryFilterSchema>;

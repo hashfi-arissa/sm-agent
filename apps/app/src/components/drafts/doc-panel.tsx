@@ -9,7 +9,7 @@ import {
   TabsTrigger,
 } from "@repo/ui/components/tabs";
 import { Textarea } from "@repo/ui/components/textarea";
-import { LoaderCircle, Save } from "lucide-react";
+import { ArrowRight, LoaderCircle, Save } from "lucide-react";
 import type { RefObject } from "react";
 
 import { Markdown } from "../markdown";
@@ -24,12 +24,15 @@ export function DocPanel({
   saving,
   everSaved,
   saveError,
+  converting,
+  convertError,
   bodyRef,
   onTitleChange,
   onBodyChange,
   onTabChange,
   onCursorChange,
   onSave,
+  onConvert,
 }: {
   title: string;
   body: string;
@@ -39,6 +42,9 @@ export function DocPanel({
   /** The document has been saved at least once. */
   everSaved: boolean;
   saveError: string | null;
+  /** Codex is structuring this draft into a Content item. */
+  converting: boolean;
+  convertError: string | null;
   bodyRef: RefObject<HTMLTextAreaElement | null>;
   onTitleChange: (title: string) => void;
   onBodyChange: (body: string) => void;
@@ -46,6 +52,7 @@ export function DocPanel({
   /** Remembers where "Insert into doc" should put text. */
   onCursorChange: (position: number) => void;
   onSave: () => void;
+  onConvert: () => void;
 }) {
   const status = saving
     ? "Saving…"
@@ -99,7 +106,26 @@ export function DocPanel({
           )}
           Save draft
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onConvert}
+          disabled={converting || !body.trim()}
+          title="Structure this draft into a Reel script with Codex"
+        >
+          {converting ? (
+            <LoaderCircle className="animate-spin" data-icon="inline-start" />
+          ) : (
+            <ArrowRight data-icon="inline-start" />
+          )}
+          Convert to Content
+        </Button>
       </div>
+      {convertError && (
+        <p className="text-destructive border-b px-4 py-2 text-sm">
+          {convertError}
+        </p>
+      )}
 
       <Tabs
         value={tab}

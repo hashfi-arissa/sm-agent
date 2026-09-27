@@ -1,7 +1,7 @@
 # Social Media Agent — Project Plan
 
 > Source of truth for scope, architecture and milestones. Update the **Status** column
-> and checklists as work lands. Last revised: 2026-09-27 (M1 done).
+> and checklists as work lands. Last revised: 2026-09-27 (M2 done).
 
 ## 1. Product summary
 
@@ -222,7 +222,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | --- | ------------------------------------------------- | ----------------- | -------------- |
 | M0  | Foundation                                        | Opus 5.5 · high   | ✅ done        |
 | M1  | Drafting                                          | Opus 5.5 · medium | ✅ done        |
-| M2  | Content                                           | Sonnet 5 · high   | ⚪ not started |
+| M2  | Content                                           | Sonnet 5 · high   | ✅ done        |
 | M3  | Calendar                                          | Opus 5.5 · medium | ⚪ not started |
 | M4  | Daily-use polish                                  | Sonnet 5 · medium | ⚪ not started |
 | L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | ⚪ not started |
@@ -278,10 +278,26 @@ reproduced live.
 
 ### M2 — Content
 
-- [ ] Content editor: topic, hook, beats (add/reorder/remove), CTA, target length, caption, hashtags
-- [ ] Save (draft → saved), duplicate, delete
-- [ ] Convert draft → content (Codex-assisted structuring into hook/beats/CTA)
-- [ ] Library with search and status filter
+- [x] Content editor: topic, hook, beats (add/reorder/remove), CTA, target length, caption, hashtags
+      → beats reorder via up/down buttons (no drag-and-drop yet — `@dnd-kit` is scoped to the
+      calendar in M3); hashtags edited as one space/comma-separated field, parsed + deduped on save
+- [x] Save (draft → saved), duplicate, delete
+      → mirrors the drafting workspace: the row is created lazily on first Save and the URL
+      switches to `/contents/[id]` in place; Duplicate copies fields as a fresh `draft`
+- [x] Convert draft → content (Codex-assisted structuring into hook/beats/CTA)
+      → `POST /api/drafts/[id]/convert` runs one turn on a fresh thread (the draft's own locked
+      model/effort), asks Codex for a strict JSON reply, validates it against `contentSchema`,
+      and creates the `Content` row; the editor links back to the source draft
+- [x] Library with search and status filter
+      → `/contents` filters via a plain GET form (`?q=&status=`), no client JS needed; status
+      filters on the derived `DisplayStatus` (draft/saved/scheduled/posted/missed)
+
+**Result:** verified in the browser 2026-09-27 — new content → filled topic/beat/hashtags → Save
+(row created, URL switched in place) → reload confirmed persistence → Duplicate → Delete; library
+search (`?q=`) and status filter both narrow correctly. Convert to Content run live against a real
+saved draft (GPT-6-Astra): Codex returned well-formed hook/4 beats/CTA/caption/hashtags, the new
+content linked back to "Open source draft" correctly (resolving `Content.sourceDraftId`, which
+points at the draft *document* id, to the session id used in `/drafts/[id]`).
 
 ### M3 — Calendar
 

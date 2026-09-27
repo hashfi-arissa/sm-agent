@@ -59,6 +59,8 @@ export function DraftWorkspace({
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const cursorRef = useRef<number | null>(null);
   const dirty = title.trim() !== persisted.title || body !== persisted.body;
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
 
   const [pane, setPane] = useState<"chat" | "doc">("chat");
 
@@ -122,8 +124,8 @@ export function DraftWorkspace({
     }
   }
 
-  async function save() {
-    if (saving) return;
+  async function save(): Promise<boolean> {
+    if (saving) return true;
     setSaving(true);
     setSaveError(null);
     const snapshot = { title: title.trim(), body };
@@ -138,10 +140,36 @@ export function DraftWorkspace({
       );
       setPersisted(snapshot);
       setEverSaved(true);
+      return true;
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : String(error));
+      return false;
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** Saves the draft if needed, then asks Codex to structure it into a Content item. */
+  async function convert() {
+    if (converting) return;
+    setConverting(true);
+    setConvertError(null);
+    try {
+      if (dirty || !sessionRef.current) {
+        const ok = await save();
+        if (!ok) throw new Error("Save the draft before converting it");
+      }
+      const id = sessionRef.current;
+      if (!id) throw new Error("Save the draft before converting it");
+      const res = await ensureOk(
+        await fetch(`/api/drafts/${id}/convert`, { method: "POST" }),
+      );
+      const { id: contentId } = (await res.json()) as { id: string };
+      router.push(`/contents/${contentId}`);
+    } catch (error) {
+      setConvertError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setConverting(false);
     }
   }
 
@@ -318,12 +346,15 @@ export function DraftWorkspace({
             saving={saving}
             everSaved={everSaved}
             saveError={saveError}
+            converting={converting}
+            convertError={convertError}
             bodyRef={bodyRef}
             onTitleChange={setTitle}
             onBodyChange={setBody}
             onTabChange={setDocTab}
             onCursorChange={(position) => (cursorRef.current = position)}
             onSave={() => void save()}
+            onConvert={() => void convert()}
           />
         </div>
       </div>
