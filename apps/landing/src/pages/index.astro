@@ -1,5 +1,66 @@
 ---
 import "@repo/ui/globals.css";
+
+const steps = [
+  {
+    n: "1",
+    title: "Chat",
+    body: "Pick a Codex model and reasoning effort, then talk through your Reel idea like you would with a collaborator.",
+  },
+  {
+    n: "2",
+    title: "Draft",
+    body: "Codex writes into an editable draft doc alongside the chat. Insert replies, tweak the wording, save when it's ready.",
+  },
+  {
+    n: "3",
+    title: "Content",
+    body: "Convert the draft into a structured Reel script — hook, beats, CTA, caption and hashtags — or start one from scratch.",
+  },
+  {
+    n: "4",
+    title: "Calendar",
+    body: "Drag saved content onto a day to plan when it goes out. Month or week view, reschedule by dragging.",
+  },
+];
+
+const features = [
+  {
+    title: "Codex-powered drafting",
+    body: "Runs on your own ChatGPT plan through the Codex CLI. No API key, no per-token bill, no data leaving your machine to a hosted backend.",
+  },
+  {
+    title: "Pick model & effort per chat",
+    body: "Choose from your available Codex models and reasoning efforts before a chat starts — locked in for that session, so replies stay consistent.",
+  },
+  {
+    title: "Reel script builder",
+    body: "A purpose-built editor for hook, beats, CTA, caption and hashtags — not a blank text box.",
+  },
+  {
+    title: "Drag-and-drop content calendar",
+    body: "See what's scheduled at a glance, drag saved content onto a date, and mark it posted when it goes out.",
+  },
+];
+
+const faqs = [
+  {
+    q: "Do I need my own OpenAI API key?",
+    a: "No. Social Media Agent talks to the Codex CLI's app-server, which uses your existing ChatGPT plan login — the same one you use for Codex. There's no API key to manage and nothing is billed per token.",
+  },
+  {
+    q: "Where does my data live?",
+    a: "Locally, in a SQLite file on your own machine. Drafts, content and your schedule never leave your computer except for the prompts Codex needs to draft a reply.",
+  },
+  {
+    q: "Does it post to Instagram for me?",
+    a: "Not yet. The calendar is for planning — it tells you what's due and when. Auto-posting is on the roadmap but out of scope for now.",
+  },
+  {
+    q: "What do I need installed?",
+    a: "The Codex CLI, signed in with a ChatGPT plan that includes Codex access. The app itself will ship as a desktop app so you don't need to run anything else.",
+  },
+];
 ---
 
 <html lang="en">
@@ -9,13 +70,178 @@ import "@repo/ui/globals.css";
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
-    <title>Social Media Agent</title>
+    <title>Social Media Agent — Plan, draft & schedule Reels with Codex</title>
+    <meta
+      name="description"
+      content="A local-first app for planning, drafting and scheduling Instagram Reels, powered by your own Codex/ChatGPT plan — no API key required."
+    />
   </head>
-  <body class="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-    <h1 class="text-3xl font-semibold tracking-tight">Social Media Agent</h1>
-    <p class="text-muted-foreground">
-      Plan, draft & schedule your Reels with Codex.
-    </p>
-    <p class="text-sm text-muted-foreground">Landing page coming soon.</p>
+  <body class="bg-background text-foreground">
+    <!-- Hero -->
+    <header class="border-b border-border">
+      <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+        <span class="text-sm font-semibold tracking-tight">
+          Social Media Agent
+        </span>
+        <a
+          href="#waitlist"
+          class="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          Join waitlist
+        </a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="mx-auto max-w-3xl px-6 py-20 text-center sm:py-28">
+        <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          Plan, draft & schedule your Reels with Codex
+        </h1>
+        <p class="mt-5 text-lg text-muted-foreground text-balance">
+          A local-first app that turns a chat with Codex into a structured Reel
+          script and a calendar you can actually stick to — running on your own
+          ChatGPT plan, not a hosted API.
+        </p>
+        <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a
+            href="#waitlist"
+            class="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Join the waitlist
+          </a>
+          <a
+            href="#how-it-works"
+            class="rounded-md border border-border px-5 py-2.5 text-sm font-medium hover:bg-accent"
+          >
+            See how it works
+          </a>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how-it-works" class="border-t border-border bg-muted/30">
+        <div class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <h2 class="text-center text-sm font-medium tracking-wide text-muted-foreground uppercase">
+            How it works
+          </h2>
+          <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step) => (
+              <div class="rounded-lg border border-border bg-card p-5">
+                <div class="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                  {step.n}
+                </div>
+                <h3 class="mt-4 font-semibold">{step.title}</h3>
+                <p class="mt-2 text-sm text-muted-foreground">{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section id="features" class="border-t border-border">
+        <div class="mx-auto max-w-5xl px-6 py-16 sm:py-20">
+          <h2 class="text-center text-3xl font-semibold tracking-tight">
+            Built for Reels, not everything
+          </h2>
+          <p class="mt-3 text-center text-muted-foreground">
+            No generic social scheduler bloat — just the parts that matter for
+            turning an idea into a posted Reel.
+          </p>
+          <div class="mt-10 grid gap-6 sm:grid-cols-2">
+            {features.map((feature) => (
+              <div class="rounded-lg border border-border bg-card p-6">
+                <h3 class="font-semibold">{feature.title}</h3>
+                <p class="mt-2 text-sm text-muted-foreground">{feature.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- Requirements -->
+      <section id="requirements" class="border-t border-border bg-muted/30">
+        <div class="mx-auto max-w-3xl px-6 py-16 text-center sm:py-20">
+          <h2 class="text-3xl font-semibold tracking-tight">What you need</h2>
+          <p class="mt-4 text-muted-foreground">
+            The Codex CLI installed and signed in with a ChatGPT plan that
+            includes Codex access. That's it — Social Media Agent runs on your
+            machine and drives Codex the same way the terminal does.
+          </p>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="border-t border-border">
+        <div class="mx-auto max-w-3xl px-6 py-16 sm:py-20">
+          <h2 class="text-center text-3xl font-semibold tracking-tight">
+            Frequently asked
+          </h2>
+          <div class="mt-8 divide-y divide-border rounded-lg border border-border">
+            {faqs.map((faq) => (
+              <details class="group p-5 open:pb-5">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium marker:content-none">
+                  {faq.q}
+                  <span class="shrink-0 text-muted-foreground transition-transform group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p class="mt-3 text-sm text-muted-foreground">{faq.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <!-- Waitlist -->
+      <section id="waitlist" class="border-t border-border bg-muted/30">
+        <div class="mx-auto max-w-xl px-6 py-16 text-center sm:py-20">
+          <h2 class="text-3xl font-semibold tracking-tight">
+            Get notified at launch
+          </h2>
+          <p class="mt-3 text-muted-foreground">
+            Social Media Agent is still being built for personal use first.
+            Leave your email and you'll hear about it when the public release is
+            ready.
+          </p>
+          <form class="mt-6 flex flex-col gap-3 sm:flex-row">
+            <label for="email" class="sr-only">
+              Email address
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              placeholder="you@example.com"
+              class="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring/50"
+            />
+            <button
+              type="submit"
+              disabled
+              aria-disabled="true"
+              title="Waitlist isn't open yet"
+              class="h-10 shrink-0 rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground opacity-50"
+            >
+              Join waitlist
+            </button>
+          </form>
+          <p class="mt-3 text-xs text-muted-foreground">
+            Waitlist signup is coming soon.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-border">
+      <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
+        <span>© {new Date().getFullYear()} Social Media Agent</span>
+        <div class="flex items-center gap-6">
+          <span class="cursor-not-allowed opacity-60">Privacy</span>
+          <span class="cursor-not-allowed opacity-60">Terms</span>
+          <span class="cursor-not-allowed opacity-60">Changelog</span>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
