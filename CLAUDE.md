@@ -41,11 +41,16 @@ Run from the repo root:
 
 - `pnpm dev` — app on http://localhost:3000 + landing on http://localhost:4321
 - `pnpm dev:app` / `pnpm dev:landing` — just one of them
-- `pnpm build` · `pnpm lint` · `pnpm typecheck` — all via Turborepo
+- `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` — all via Turborepo (tests: vitest)
 - `pnpm format` / `pnpm format:check` — Prettier (with Astro + Tailwind plugins)
 - Add a shadcn component (lands in `packages/ui`): `pnpm dlx shadcn@latest add <name> -c apps/app`
+- DB: edit `packages/db/src/schema.ts`, then `pnpm --filter @repo/db db:generate` (migrations
+  apply automatically when the app opens the db)
+- Codex protocol types after a CLI upgrade: `pnpm --filter @repo/ai codex:types`
+- Live Codex check (uses real ChatGPT quota, so opt-in): `CODEX_LIVE=1 pnpm --filter @repo/ai test`
 
-Before calling work done: `pnpm typecheck && pnpm lint && pnpm build` must pass.
+Before calling work done: `pnpm typecheck && pnpm lint && pnpm test && pnpm build` must pass.
+For UI changes, also check it in the browser (`/connect` exercises Codex end to end).
 
 ## Conventions
 
@@ -56,4 +61,10 @@ Before calling work done: `pnpm typecheck && pnpm lint && pnpm build` must pass.
 - `apps/app` and `apps/landing` each have their own `AGENTS.md` with framework-specific notes
   (Next 16 / Astro 7 differ from older versions) — read it before working in that app.
 - Validate every API route input with the shared zod schemas from `packages/types`.
+- Server code gets singletons from `getAIProvider()` (`@repo/ai`) and `getDb()` (`@repo/db`);
+  both survive Next dev reloads. Pages that call them must be dynamic (`await connection()`),
+  so `next build` never starts Codex.
+- AI replies stream to the browser as NDJSON `ChatEvent`s (see `/api/codex/test`); pass
+  `request.signal` through so closing the request interrupts the Codex turn.
+- Codex model ids and effort values come from `model/list` at runtime — never hardcode them.
 - Schedule dates are stored as local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`), not UTC timestamps.

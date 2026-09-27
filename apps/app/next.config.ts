@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@repo/ui"],
+  // Workspace packages ship TypeScript source; Next compiles them.
+  transpilePackages: ["@repo/ui", "@repo/ai", "@repo/types"],
 };
 
 export default nextConfig;

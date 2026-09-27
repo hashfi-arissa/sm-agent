@@ -111,3 +111,13 @@ export function displayStatus(
   if (entry.status === "planned") return "scheduled";
   return entry.status;
 }
+
+// ── API inputs ───────────────────────────────────────────────────────────────
+
+/** POST /api/codex/test — one-off prompt from the Connect screen. */
+export const codexTestInputSchema = z.object({
+  model: z.string().min(1),
+  effort: z.string().min(1),
+  prompt: z.string().trim().min(1, "Write a prompt first").max(4000),
+});
+export type CodexTestInput = z.infer<typeof codexTestInputSchema>;

@@ -35,20 +35,30 @@ not the OpenAI API. Consequences:
   run threads with a **read-only sandbox, no approvals, in an empty scratch `cwd`**, and give it
   content-writing instructions.
 
-### Codex app-server protocol (verified against docs 2026-09-27)
+### Codex app-server protocol (verified live against codex-cli 0.157.1 in M0)
 
-| Need                   | Method / event                                                                 |
-| ---------------------- | ------------------------------------------------------------------------------ |
-| Start server           | `codex app-server` (stdio, newline-delimited JSON-RPC)                         |
-| Model + effort pickers | `model/list` → per model `supportedReasoningEfforts`, `defaultReasoningEffort` |
-| New draft chat         | `thread/start` with `model`, `effort`                                          |
-| Send message           | `turn/start` with `threadId`, `input` (returns immediately; output streams)    |
-| Streamed reply         | notifications `item/agentMessage/delta`, `item/started`, `item/completed`      |
-| Reopen chat            | `thread/resume` with `threadId`                                                |
+| Need                   | Method / event                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------------- |
+| Start server           | `codex app-server` (stdio, newline-delimited JSON-RPC, no `"jsonrpc"` field)                         |
+| Handshake              | `initialize` {clientInfo, capabilities} → then `initialized` notification                            |
+| Login state            | `account/read` → `{account: {type: "chatgpt", email, planType} \| null, requiresOpenaiAuth}`         |
+| Sign in                | `account/login/start` {type: "chatgpt"} → `authUrl`; `account/login/completed` notification          |
+| Model + effort pickers | `model/list` (paginated) → per model `supportedReasoningEfforts`, `defaultReasoningEffort`           |
+| New draft chat         | `thread/start` with `model`, `cwd`, `sandbox`, `approvalPolicy`, `developerInstructions`             |
+| Send message           | `turn/start` with `threadId`, `input`, **`model` + `effort`** (effort is per turn, not per thread)   |
+| Streamed reply         | `item/started` (agentMessage `phase`), `item/agentMessage/delta`, `item/completed`, `turn/completed` |
+| Stop                   | `turn/interrupt` {threadId, turnId} → `turn/completed` with status `interrupted`                     |
+| Reopen chat            | `thread/resume` with `threadId` (needed after the app-server process restarts)                       |
 
-**To verify in M0:** initialize handshake, account/auth methods (read login status,
-start ChatGPT login), and the `thread/start` params for sandbox / approval policy / cwd /
-instructions. Docs: https://learn.chatgpt.com/docs/app-server
+Full typed protocol: `packages/ai/src/codex/protocol/` (regenerate with `pnpm --filter @repo/ai codex:types`
+after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
+
+**Known limitations (M0):**
+
+- Drafting threads are persisted by Codex (needed for `thread/resume`), so they also appear in the
+  user's own Codex session history.
+- The read-only sandbox blocks writes and commands, but Codex can still read files outside the
+  scratch dir; the drafting instructions tell it not to.
 
 ## 3. Decisions
 
@@ -208,7 +218,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 
 | #   | Milestone                                         | Model · effort    | Status         |
 | --- | ------------------------------------------------- | ----------------- | -------------- |
-| M0  | Foundation                                        | Opus 5.5 · high   | 🟡 in progress |
+| M0  | Foundation                                        | Opus 5.5 · high   | ✅ done        |
 | M1  | Drafting                                          | Opus 5.5 · medium | ⚪ not started |
 | M2  | Content                                           | Sonnet 5 · high   | ⚪ not started |
 | M3  | Calendar                                          | Opus 5.5 · medium | ⚪ not started |
@@ -229,13 +239,16 @@ use Haiku 4.5. If stuck, raise effort before switching model.
 - [x] Turborepo + pnpm workspace scaffold; shared TS/ESLint/Prettier config
 - [x] `apps/app` (Next.js 16 + Tailwind 4 + shadcn/ui), `apps/landing` (Astro 7) skeletons
       → both consume the shared theme from `@repo/ui/globals.css`; `types`/`db`/`ai` are empty stubs
-- [ ] `packages/types`: zod schemas for DraftSession, ChatMessage, DraftDocument, Content, ScheduleEntry
-- [ ] `packages/db`: Drizzle schema + first migration → `data/app.db`
-- [ ] `packages/ai`: `AIProvider` interface + Codex implementation
+- [x] `packages/types`: zod schemas for DraftSession, ChatMessage, DraftDocument, Content, ScheduleEntry
+- [x] `packages/db`: Drizzle schema + first migration → `data/app.db`
+- [x] `packages/ai`: `AIProvider` interface + Codex implementation
       (spawn, initialize, `model/list`, `thread/start`, `turn/start` stream, `thread/resume`).
       Generate protocol types with `codex app-server generate-ts` instead of hand-writing them.
-- [ ] Verify read-only sandbox / scratch cwd for drafting threads
-- [ ] "Connect Codex" screen: CLI found? signed in? models listed?
+- [x] Verify read-only sandbox / scratch cwd for drafting threads (asserted in provider tests)
+- [x] "Connect Codex" screen (`/connect`): CLI found? signed in? models listed? + streamed test prompt with Stop
+
+**Result:** verified in the browser 2026-09-27 — Plus account, 7 models, GPT-6-Luna @ low streamed
+a reply in 5.7s; Stop interrupts the Codex turn server-side.
 
 **Done when:** `pnpm dev` runs the app, the Connect screen shows the Codex login state and the
 model list with efforts, and a test prompt streams a reply end to end.
