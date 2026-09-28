@@ -1,7 +1,7 @@
 {
   "name": "desktop",
   "productName": "Social Media Agent",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Plan, draft and schedule Instagram Reels with Codex.",
   "author": "Hashfi",
