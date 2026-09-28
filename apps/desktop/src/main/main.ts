@@ -189,6 +189,10 @@ function createWindow() {
     title: "Social Media Agent",
     backgroundColor: nativeTheme.shouldUseDarkColors ? "#0a0a0a" : "#ffffff",
     autoHideMenuBar: true,
+    // Packaged builds use the exe icon (assets/icon.ico); give the dev window the same one.
+    icon: app.isPackaged
+      ? undefined
+      : path.join(app.getAppPath(), "assets", "icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
