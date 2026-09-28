@@ -432,7 +432,18 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       blockmap each create a publisher). `release` now builds with `--publish never` and
       `scripts/publish.mjs` uploads via the GitHub API into a draft, verifies GitHub's SHA-256,
       then publishes; `--dry-run` checks everything without touching GitHub
-- [ ] Verify auto-update end to end: publish v0.1.1 and confirm the installed v0.1.0 updates
+- [ ] Verify auto-update end to end. v0.1.1 published cleanly via `publish.mjs`, and v0.1.0 found,
+      downloaded and launched it, but the installer stuck on "cannot be closed" (Retry loops).
+      Cause: one staged server file was 261 chars once installed
+      (`…
+esourcesserver
+ode_modules.pnpm
+ext@16.3.6_@babel+core@7.2_b88af3c6……has-interception-route-in-current-tree.js`),
+      past MAX_PATH, so the old version's NSIS uninstaller couldn't delete it. Fixed in `stage.mjs`:
+      `.pnpm` store folders get short numeric names and `assertPathBudget` fails the build if any
+      path could exceed MAX_PATH for usernames up to 20 chars (longest now 134/177). 0.1.0/0.1.1
+      installs still carry the long path, so they need a manual uninstall + fresh install of 0.1.2;
+      then verify auto-update 0.1.2 → 0.1.3
 - [ ] Install on a clean Windows machine/VM (only tested on the dev machine so far)
 
 **Result so far:** verified 2026-09-28 — `pnpm --filter desktop start` and the packaged

@@ -26,6 +26,9 @@ const repoRoot = realpathSync(path.resolve(desktopDir, "..", ".."));
 const appDir = path.join(repoRoot, "apps", "app");
 const stageDir = path.join(desktopDir, ".stage");
 
+/** Longest Windows username the install path must still fit under MAX_PATH with. */
+const USERNAME_BUDGET = 20;
+
 const CODEX_TARGETS = {
   "win32-x64": "x86_64-pc-windows-msvc",
   "win32-arm64": "aarch64-pc-windows-msvc",
@@ -60,6 +63,7 @@ const standalone = realpathSync(path.join(appDir, ".next", "standalone"));
 const serverDir = path.join(stageDir, "server");
 copyTree(standalone, serverDir);
 hoistPnpmFallback(path.join(serverDir, "node_modules"));
+shortenPnpmDirs(path.join(serverDir, "node_modules"));
 copyTree(
   path.join(appDir, ".next", "static"),
   path.join(serverDir, "apps", "app", ".next", "static"),
@@ -93,6 +97,7 @@ copyTree(
   path.join(stageDir, "codex"),
 );
 
+assertPathBudget(stageDir);
 step(`Staged ${formatBytes(dirSize(stageDir))} in ${stageDir}`);
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -150,6 +155,59 @@ function hoistPnpmFallback(nodeModules) {
     if (existsSync(to)) continue;
     renameSync(path.join(fallback, entry), to);
   }
+}
+
+/**
+ * pnpm names its store folders after the package, version and peer-dependency hash
+ * (`.pnpm/next@16.3.6_@babel+core@7.2_b88af3c6…`). Installed under
+ * `%LOCALAPPDATA%\Programs\social-media-agent\resources`, that pushed a file past
+ * Windows' 260-character MAX_PATH, and NSIS can't delete or overwrite such files, so
+ * updates got stuck on
+ * "cannot be closed". Nothing resolves these folders by name once the links are
+ * flattened (Node walks up to the nearest node_modules), so give them short names.
+ */
+function shortenPnpmDirs(nodeModules) {
+  const store = path.join(nodeModules, ".pnpm");
+  if (!existsSync(store)) return;
+  const fallback = path.join(store, "node_modules");
+  if (existsSync(fallback) && readdirSync(fallback).length === 0)
+    rmSync(fallback, { recursive: true });
+  readdirSync(store)
+    .filter((entry) => entry !== "node_modules")
+    .sort()
+    .forEach((entry, i) =>
+      renameSync(path.join(store, entry), path.join(store, String(i))),
+    );
+}
+
+/**
+ * Staged files end up at `<install dir>\resources\<relative path>`. Assume a Windows
+ * username of up to USERNAME_BUDGET characters and fail the build if any path could
+ * exceed MAX_PATH (259 characters plus the terminator), rather than ship an installer
+ * that can't update itself.
+ */
+function assertPathBudget(root) {
+  const prefix = path.win32.join(
+    "C:\\Users",
+    "u".repeat(USERNAME_BUDGET),
+    "AppData\\Local\\Programs\\social-media-agent\\resources\\",
+  );
+  const budget = 259 - prefix.length;
+  let longest = "";
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      const rel = path.relative(root, full);
+      if (rel.length > longest.length) longest = rel;
+      if (entry.isDirectory()) walk(full);
+    }
+  };
+  walk(root);
+  if (longest.length > budget)
+    throw new Error(
+      `Staged path is ${longest.length} chars (budget ${budget}); installed it would pass MAX_PATH:\n  ${longest}`,
+    );
+  console.log(`  longest staged path: ${longest.length}/${budget} chars`);
 }
 
 function dirSize(dir) {
