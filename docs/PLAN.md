@@ -234,7 +234,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | M2  | Content                                           | Sonnet 5 · high   | ✅ done        |
 | M3  | Calendar                                          | Opus 5.5 · medium | ✅ done        |
 | M4  | Daily-use polish                                  | Sonnet 5 · medium | ✅ done        |
-| L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | 🟡 in progress |
+| L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | ✅ done        |
 | M5  | Public release                                    | Opus 5.5 · high   | 🟡 in progress |
 | R   | Pre-release security/code review                  | Fable 5.1 · high  | ⚪ not started |
 
@@ -367,21 +367,17 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       `<details>`. Waitlist form is UI-only for now (submit disabled) — no backend chosen yet.
 - [x] ~~Wire up the waitlist form to a real backend once one is chosen~~ → superseded in M5:
       the waitlist section was replaced by downloads
-- [ ] Astro build, deploy
+- [x] Astro build, deploy
       → `pnpm --filter landing build` verified clean (3 pages: `/`, `/privacy`, `/terms`) into
-      `apps/landing/dist/`. Deploy target: **Cloudflare Pages, connected to the GitHub repo**
-      (auto-deploys on push to `main`). Added root `.nvmrc` (`22`, matches `engines.node`) so
-      Cloudflare's build image picks the right Node version; `packageManager: "pnpm@12.6.0"` in
-      the root `package.json` is already enough for Cloudflare to use pnpm via Corepack.
-      Remaining steps are account actions only I can't do for you:
-      1. Push this repo to a GitHub repo (none is set as a remote yet).
-      2. Update `GITHUB_REPO` in `apps/landing/src/config.ts` (still the `OWNER/REPO` placeholder)
-         once that repo exists, so the download/release links resolve.
-      3. In the Cloudflare dashboard: Workers & Pages → Create → Pages → Connect to Git → pick
-         that repo. Build settings: **Build command** `pnpm install --frozen-lockfile && pnpm
-         --filter landing build`, **Build output directory** `apps/landing/dist`, **Root
-         directory** leave blank (must build from the monorepo root so the `@repo/ui` workspace
-         package resolves).
+      `apps/landing/dist/`. Repo pushed to `github.com/hashfi-arissa/sm-agent`; `GITHUB_REPO` in
+      `apps/landing/src/config.ts` points at it. Deployed to **Cloudflare Pages**, connected to
+      that GitHub repo (auto-deploys on push to `main`) — build command
+      `pnpm install --frozen-lockfile && pnpm --filter landing build`, output directory
+      `apps/landing/dist`, root directory blank. Root `.nvmrc` (`22`) pins the Node version for
+      Cloudflare's build image. Live at https://sm-agent-3of.pages.dev/ — verified in the browser
+      2026-09-28: home page, `/privacy`, download links resolve to the real GitHub releases URL,
+      no console errors. Custom subdomain on `hashfi.work` (via Hostinger DNS CNAME) not set up
+      yet.
 
 ### M5 — Public release
 
@@ -415,8 +411,13 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       → `/privacy`, `/terms` (shared `LegalPage` layout), "Download for Windows" CTAs and a
       Download section pointing at `releases/latest`; FAQ covers bundled Codex, SmartScreen, updates.
       Plain-language drafts written from what the app actually does — get them reviewed before launch
-- [ ] Create the GitHub repo and replace the `OWNER/REPO` placeholders
-      (`apps/desktop/electron-builder.yml` `publish`, `apps/landing/src/config.ts`)
+- [x] Create the GitHub repo and replace the `OWNER/REPO` placeholders
+      → `hashfi-arissa/sm-agent`, set in `apps/desktop/electron-builder.yml` `publish` and
+      `apps/landing/src/config.ts`. Installer now installs to `Programssocial-media-agent`
+      (`extraMetadata.name`; the workspace package is `desktop`)
+- [ ] Make releases publicly reachable: the repo is **private**, so logged-out download links
+      and the app's update check get 404 (seen in the installed app's log). Either make the repo
+      public or publish releases to a separate public repo — never ship a token in the app
 - [x] App icon → `apps/desktop/assets/icon.svg` is the source (9:16 Reel frame + play button +
       Codex sparkle on a dark tile); `icon.ico` (16–256 px, PNG-compressed) and `icon.png` (512 px,
       dev window) and both favicons are rendered from it by `pnpm --filter desktop icons`
