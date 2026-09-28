@@ -405,7 +405,7 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       (`apps/desktop/electron-builder.yml` `publish`, `apps/landing/src/config.ts`)
 - [x] App icon → `apps/desktop/assets/icon.svg` is the source (9:16 Reel frame + play button +
       Codex sparkle on a dark tile); `icon.ico` (16–256 px, PNG-compressed) and `icon.png` (512 px,
-      dev window) are rendered from it
+      dev window) and both favicons are rendered from it by `pnpm --filter desktop icons`
 - [ ] Code-signing certificate (`CSC_LINK`/`CSC_KEY_PASSWORD`) so SmartScreen stops warning
 - [ ] Publish v0.1.0 (`GH_TOKEN=… pnpm --filter desktop release`), install it on a clean Windows
       machine, then publish v0.1.1 to verify auto-update end to end

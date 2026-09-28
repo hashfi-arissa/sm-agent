@@ -51,6 +51,7 @@ Run from the repo root:
   apply automatically when the app opens the db)
 - Codex protocol types after a CLI upgrade: `pnpm --filter @repo/ai codex:types`
 - Live Codex check (uses real ChatGPT quota, so opt-in): `CODEX_LIVE=1 pnpm --filter @repo/ai test`
+- Icons: edit `apps/desktop/assets/icon.svg`, then `pnpm --filter desktop icons` (app icon + both favicons)
 - Desktop: `pnpm --filter desktop stage` (standalone app build + Codex into `.stage/`; re-run after
   app changes), then `pnpm --filter desktop start`. Set `SMA_APP_URL=http://localhost:3000` to run
   the shell against `pnpm dev` instead. Installer: `pnpm --filter desktop dist` → `apps/desktop/release/`

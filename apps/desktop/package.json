@@ -9,6 +9,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "stage": "node scripts/stage.mjs",
+    "icons": "node scripts/icons.mjs",
     "start": "node scripts/build.mjs && electron .",
     "dist": "node scripts/stage.mjs && node scripts/build.mjs && electron-builder --win --publish never",
     "release": "node scripts/stage.mjs && node scripts/build.mjs && electron-builder --win --publish always",
@@ -27,6 +28,7 @@
     "electron-updater": "^6.8.9",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
+    "sharp": "^0.35.4",
     "typescript": "^5.9.3",
     "vitest": "^5.0.2"
   },
