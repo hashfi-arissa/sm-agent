@@ -43,6 +43,7 @@ describe("CodexProvider (fake app-server)", () => {
     expect(await makeProvider().getStatus()).toEqual({
       state: "ready",
       version: "9.9.9",
+      bundled: false,
       account: { type: "chatgpt", email: "me@example.com", plan: "plus" },
     });
   });

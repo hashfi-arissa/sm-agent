@@ -1,0 +1,4 @@
+# esbuild output, staged server/Codex, electron-builder output
+dist/
+.stage/
+release/

@@ -1,0 +1,86 @@
+---
+import { ISSUES_URL } from "../config";
+import LegalPage from "../layouts/LegalPage.astro";
+---
+
+<LegalPage
+  title="Terms of Use"
+  description="The terms for downloading and using Social Media Agent."
+  updated="September 28, 2026"
+>
+  <p>
+    These terms apply when you download or use the Social Media Agent desktop
+    app and this website. By using the app, you agree to them.
+  </p>
+
+  <h2>Using the app</h2>
+  <p>
+    You may install and use the app on your own computers to plan and draft your
+    content. Don't use it to break the law, or to break the terms of services it
+    connects to.
+  </p>
+
+  <h2>Your ChatGPT account and Codex</h2>
+  <p>
+    AI drafting runs through the Codex CLI on your ChatGPT account. You need
+    your own ChatGPT plan that includes Codex. You are responsible for following
+    OpenAI's terms and usage policies. Replies count toward your plan's limits,
+    and OpenAI decides which models are available and when. The app includes a
+    copy of the Codex CLI, which OpenAI provides under the Apache License 2.0.
+    That license and other third-party notices ship with the app in its
+    <code>resources\licenses</code> folder.
+  </p>
+
+  <h2>Your content</h2>
+  <p>
+    You own what you create in the app. AI-generated drafts can be wrong,
+    unoriginal or unsuitable, so review everything before you publish it. You
+    are responsible for what you post and for following Instagram's rules.
+  </p>
+
+  <h2>Your data</h2>
+  <p>
+    Your data stays on your computer (see the{" "}
+    <a href="/privacy">Privacy Policy</a>). Keeping backups is up to you. The
+    app can export everything to a file from Settings.
+  </p>
+
+  <h2>Updates</h2>
+  <p>
+    The app downloads and installs updates automatically. We may change or stop
+    offering features, or the app itself, at any time.
+  </p>
+
+  <h2>No warranty</h2>
+  <p>
+    The app is provided "as is", without warranties of any kind, express or
+    implied, including fitness for a particular purpose and non-infringement. We
+    don't guarantee that it will be error-free or always available, or that it
+    won't lose data.
+  </p>
+
+  <h2>Limitation of liability</h2>
+  <p>
+    To the fullest extent the law allows, we are not liable for any indirect,
+    incidental, special or consequential damages, or for lost data, profits or
+    content, arising from your use of the app.
+  </p>
+
+  <h2>Not affiliated</h2>
+  <p>
+    Social Media Agent is an independent project. It is not affiliated with,
+    endorsed by or sponsored by OpenAI, Instagram or Meta. Their names and
+    trademarks belong to their owners.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    We may update these terms. The date at the top shows the latest version, and
+    continuing to use the app means you accept the changes.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions? <a href={ISSUES_URL}>Open an issue on GitHub</a>.
+  </p>
+</LegalPage>

@@ -1,0 +1,25 @@
+Social Media Agent — third-party software
+==========================================
+
+This app ships the following third-party components. Each remains under its own
+license; this file lists them and where their license texts can be found.
+
+Codex CLI (resources/codex)
+  Copyright OpenAI. Licensed under the Apache License, Version 2.0 — see
+  Apache-2.0.txt in this folder. Source: https://github.com/openai/codex
+  Distributed unmodified, as published to npm as @openai/codex. Codex includes
+  further open-source components (for example ripgrep, MIT/Unlicense, in
+  codex/codex-path, and the notices under codex/codex-resources/voice).
+
+Electron
+  MIT License — see LICENSE.electron.txt next to the app executable. Chromium's
+  licenses are in LICENSES.chromium.html in the same folder.
+
+JavaScript dependencies (Next.js, React, better-sqlite3, drizzle-orm,
+electron-updater, FullCalendar, lucide-react and others)
+  Bundled into the app server (resources/server) and main process under their own
+  open-source licenses — mostly MIT, plus ISC (lucide-react) and Apache-2.0
+  (drizzle-orm, see Apache-2.0.txt). SQLite is public domain. The full license
+  text of each is published with the package on npm.
+
+Social Media Agent is not affiliated with or endorsed by OpenAI, Instagram or Meta.

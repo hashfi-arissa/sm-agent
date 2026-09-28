@@ -6,6 +6,10 @@ packages:
 allowBuilds:
   # v13 ships prebuilt binaries (prebuilds/); compiling would need MSVC build tools.
   better-sqlite3: false
+  # Downloads the Electron binary for apps/desktop.
+  electron: true
+  # Squirrel.Windows tooling pulled in by electron-builder; we build NSIS installers.
+  electron-winstaller: false
   esbuild: true
   sharp: false
   unrs-resolver: false

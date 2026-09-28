@@ -13,6 +13,8 @@ before starting work, and tick its checklists / update the milestone Status when
 - Drafting threads run Codex with a **read-only sandbox, no approvals, in an empty scratch cwd** —
   it must never edit files or run commands on the user's machine.
 - A draft session's `model` and `effort` are locked after the first message.
+- In the desktop app the server listens on 127.0.0.1 and `apps/app/src/proxy.ts` rejects any request
+  without the per-launch `x-sma-token` header. Don't add routes or assets that bypass it.
 - Only content with `status = saved` can be placed on the calendar. Scheduling state lives on
   `ScheduleEntry`, not on `Content`.
 - Out of scope until asked: thumbnail placement, non-Reels platforms, auto-posting, multi-user.
@@ -20,11 +22,12 @@ before starting work, and tick its checklists / update the milestone Status when
 ## Stack
 
 pnpm + Turborepo · Next.js 16 (App Router) · Astro 7 · TypeScript · Tailwind 4 + shadcn/ui ·
-SQLite (`better-sqlite3`) + Drizzle · zod 4 · FullCalendar 7 · @dnd-kit · Electron (M5).
+SQLite (`better-sqlite3`) + Drizzle · zod 4 · FullCalendar 7 · @dnd-kit · Electron 44 + electron-builder/electron-updater.
 
 ## Layout
 
 - `apps/app` — Next.js app (localhost)
+- `apps/desktop` — Electron shell: forks the app's standalone server, bundles Codex, updater, logs
 - `apps/landing` — Astro landing page
 - `packages/ai` — `AIProvider` + `codex/` app-server bridge
 - `packages/db` — Drizzle schema, migrations, queries
@@ -48,6 +51,10 @@ Run from the repo root:
   apply automatically when the app opens the db)
 - Codex protocol types after a CLI upgrade: `pnpm --filter @repo/ai codex:types`
 - Live Codex check (uses real ChatGPT quota, so opt-in): `CODEX_LIVE=1 pnpm --filter @repo/ai test`
+- Desktop: `pnpm --filter desktop stage` (standalone app build + Codex into `.stage/`; re-run after
+  app changes), then `pnpm --filter desktop start`. Set `SMA_APP_URL=http://localhost:3000` to run
+  the shell against `pnpm dev` instead. Installer: `pnpm --filter desktop dist` → `apps/desktop/release/`
+  (`release` also publishes to GitHub; needs `GH_TOKEN`)
 
 Before calling work done: `pnpm typecheck && pnpm lint && pnpm test && pnpm build` must pass.
 For UI changes, also check it in the browser (`/connect` exercises Codex end to end).
@@ -68,6 +75,8 @@ For UI changes, also check it in the browser (`/connect` exercises Codex end to 
   `request.signal` through so closing the request interrupts the Codex turn.
 - Codex model ids and effort values come from `model/list` at runtime — never hardcode them.
 - Schedule dates are stored as local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`), not UTC timestamps.
+- Desktop-only UI talks to Electron through `getDesktop()` (`src/lib/desktop.ts`, typed by
+  `DesktopBridge` in `@repo/types`) and must render nothing when it returns null (`pnpm dev`).
 - FullCalendar 7 has no separate plugin packages: import them from `@fullcalendar/react/<plugin>`
   (`daygrid`, `timegrid`, `interaction`, `themes/classic`); the theme is recoloured in
   `apps/app/src/components/calendar/calendar.css`.

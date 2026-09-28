@@ -15,7 +15,9 @@ const globalForAI = globalThis as unknown as { __smaAI?: AIProvider };
 
 export function getAIProvider(): AIProvider {
   if (!globalForAI.__smaAI) {
-    const provider = new CodexProvider();
+    const provider = new CodexProvider({
+      clientVersion: process.env.SMA_APP_VERSION,
+    });
     globalForAI.__smaAI = provider;
     process.once("exit", () => void provider.dispose());
   }

@@ -1,7 +1,7 @@
 # Social Media Agent — Project Plan
 
 > Source of truth for scope, architecture and milestones. Update the **Status** column
-> and checklists as work lands. Last revised: 2026-09-27 (M3 done).
+> and checklists as work lands. Last revised: 2026-09-28 (M5 code done; first release pending).
 
 ## 1. Product summary
 
@@ -61,6 +61,9 @@ after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
   user's own Codex session history until the draft is deleted in the app (M1 calls `thread/delete`).
 - The read-only sandbox blocks writes and commands, but Codex can still read files outside the
   scratch dir; the drafting instructions tell it not to.
+- The desktop app bundles a Codex CLI (M5) as a fallback; a system install on `PATH` wins. The
+  bundled copy only moves forward with app updates, so bump `@openai/codex` in
+  `apps/desktop/package.json` (and re-run `codex:types`) when cutting a release.
 
 ## 3. Decisions
 
@@ -78,6 +81,11 @@ after upgrading the CLI). Docs: https://learn.chatgpt.com/docs/app-server
 | AI access       | `AIProvider` interface, Codex as the only implementation                          | Lets us add API-key / other providers for the public release                 |
 | Schedule dates  | Store local `date` (`YYYY-MM-DD`) + optional `time` (`HH:mm`)                     | Avoids time-zone drift for a personal planner                                |
 | State placement | Content has only `draft`/`saved`; scheduling state lives on `ScheduleEntry`       | One source of truth — "scheduled"/"posted" are derived                       |
+| Packaging (M5)  | electron-builder, NSIS one-click per-user installer; Windows x64 first            | No admin prompt; lets electron-updater install silently                      |
+| Updates (M5)    | electron-updater with the GitHub Releases provider                                | Free hosting for installers + `latest.yml` feed                              |
+| Crash logs (M5) | Local only: `logs/main.log`, `logs/server.log`, Crashpad dumps; nothing uploaded  | Keeps the privacy story "nothing leaves your computer" (except Codex→OpenAI) |
+| Codex (M5)      | Bundle `@openai/codex` in the installer as a fallback; system install wins        | Users only need to sign in — no Node/npm install step                        |
+| Local API (M5)  | Desktop server on `127.0.0.1`, every request needs a per-launch `x-sma-token`     | Other local processes / web pages can't drive the API or burn Codex quota    |
 
 Package versions at planning time: next 16.3, astro 7.3, turbo 2.11, drizzle-orm 0.45,
 better-sqlite3 13.0, @fullcalendar/core 7.1, @dnd-kit/core 6.3, electron 44.4,
@@ -89,7 +97,8 @@ shadcn 4.21 (`base-nova` style on Base UI).
 ```
 social-media-agent/
 ├─ apps/
-│  ├─ app/          Next.js app (localhost; Electron wrapper in M5)
+│  ├─ app/          Next.js app (localhost; runs inside apps/desktop when installed)
+│  ├─ desktop/      Electron shell + Windows installer (M5)
 │  └─ landing/      Astro landing page
 ├─ packages/
 │  ├─ ai/           AIProvider interface
@@ -226,7 +235,7 @@ Browser UI ─HTTP/SSE─▶ Next.js route handlers ─▶ AIProvider ─stdio J
 | M3  | Calendar                                          | Opus 5.5 · medium | ✅ done        |
 | M4  | Daily-use polish                                  | Sonnet 5 · medium | ✅ done        |
 | L   | Landing page (waitlist) — any time, separate chat | Sonnet 5 · medium | 🟡 in progress |
-| M5  | Public release                                    | Opus 5.5 · high   | ⚪ not started |
+| M5  | Public release                                    | Opus 5.5 · high   | 🟡 in progress |
 | R   | Pre-release security/code review                  | Fable 5.1 · high  | ⚪ not started |
 
 Start a **new chat per milestone**; point it at this file and `CLAUDE.md`. Small chores can
@@ -356,15 +365,58 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       → `apps/landing/src/pages/index.astro`, single page, plain Astro/Tailwind (no React
       integration in this app) styled from the shared shadcn tokens; FAQ uses native
       `<details>`. Waitlist form is UI-only for now (submit disabled) — no backend chosen yet.
-- [ ] Wire up the waitlist form to a real backend once one is chosen
+- [x] ~~Wire up the waitlist form to a real backend once one is chosen~~ → superseded in M5:
+      the waitlist section was replaced by downloads
 - [ ] Astro build, deploy
 
 ### M5 — Public release
 
-- [ ] Electron wrapper (spawns Next server + Codex bridge), Windows installer first
-- [ ] First-run onboarding for users without Codex CLI / not signed in
-- [ ] Auto-update, crash logging
-- [ ] Privacy, Terms; landing switches from waitlist to downloads
+- [x] Electron wrapper (spawns Next server + Codex bridge), Windows installer first
+      → `apps/desktop`: esbuild-bundled main + preload (nothing from node_modules in app.asar).
+      `scripts/stage.mjs` builds apps/app with `output: "standalone"` (`SMA_STANDALONE=1`),
+      flattens pnpm's symlinks into real copies and hoists `.pnpm/node_modules` so Node can
+      resolve everything, and stages migrations + this platform's Codex binary into `.stage/`;
+      electron-builder ships them as `extraResources`. The server is forked from the Electron
+      binary with `ELECTRON_RUN_AS_NODE=1` on `127.0.0.1:47831` (random port if taken; the fixed
+      port keeps per-origin storage like the theme). Data lives in `%APPDATA%Social Media Agentdata`.
+      `apps/app/src/proxy.ts` refuses requests without the per-launch `x-sma-token`, which the
+      shell adds via `webRequest`. Single instance; external links and `window.open` go to the
+      system browser; sandboxed renderer with a small `window.smaDesktop` bridge
+      (`DesktopBridge` in `@repo/types`). Vendored Codex exes are excluded from our signing
+      (`signExts`) so OpenAI's signatures stay; `licenses/` ships third-party notices + Apache-2.0
+- [x] First-run onboarding for users without Codex CLI / not signed in
+      → `/welcome`: Codex check ("built into the app" vs "installed on this computer",
+      `ProviderStatus.bundled`), inline **Sign in with ChatGPT** that polls status and refreshes
+      once signed in (shared `SignInButton`, also used on `/connect`). `/` redirects there until
+      the `sma_onboarded` cookie is set by Start drafting / Go to Home / Skip for now
+- [x] Auto-update, crash logging
+      → `src/main/updater.ts`: checks 15 s after launch then every 6 h, downloads in the background,
+      asks to restart (else installs on quit); Help menu + Settings → App show status and
+      "Check for updates" / "Restart to update". Disabled when unpackaged or without
+      `app-update.yml` (`--dir` builds). Logging: `main.log` (main + renderer console errors,
+      uncaught errors, gone child/renderer processes), `server.log` (Next stdout/stderr), 5 MB
+      rotation, Crashpad dumps with `uploadToServer: false`. Server crash → dialog with
+      Restart / Open logs / Quit. Settings → App opens the data and logs folders
+- [x] Privacy, Terms; landing switches from waitlist to downloads
+      → `/privacy`, `/terms` (shared `LegalPage` layout), "Download for Windows" CTAs and a
+      Download section pointing at `releases/latest`; FAQ covers bundled Codex, SmartScreen, updates.
+      Plain-language drafts written from what the app actually does — get them reviewed before launch
+- [ ] Create the GitHub repo and replace the `OWNER/REPO` placeholders
+      (`apps/desktop/electron-builder.yml` `publish`, `apps/landing/src/config.ts`)
+- [ ] App icon (`apps/desktop/assets/icon.ico`, 256×256) — the default Electron icon ships for now
+- [ ] Code-signing certificate (`CSC_LINK`/`CSC_KEY_PASSWORD`) so SmartScreen stops warning
+- [ ] Publish v0.1.0 (`GH_TOKEN=… pnpm --filter desktop release`), install it on a clean Windows
+      machine, then publish v0.1.1 to verify auto-update end to end
+
+**Result so far:** verified 2026-09-28 — `pnpm --filter desktop start` and the packaged
+`release/win-unpacked` build both boot the server, create the db under `%APPDATA%`, and refuse
+requests without the token (403). With Codex removed from `PATH` the bundled `codex.exe` ran and
+`/welcome` showed "v0.157.1 · built into the app"; with an empty `CODEX_HOME` it showed the
+signed-out step. A test prompt streamed through the packaged app (GPT-6-Astra @ low, 5.5 s).
+Killing the server showed the crash dialog and Restart recovered; quitting leaves no `codex.exe`
+or Electron processes. The NSIS installer builds (210 MB, most of it Codex) but hasn't been run
+here, and auto-update needs two published releases to test. Next's file tracing doesn't copy
+package LICENSE files — generating a complete license bundle is a good item for R.
 
 ## 7. Later / parking lot
 

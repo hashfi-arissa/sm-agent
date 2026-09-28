@@ -8,6 +8,7 @@ import {
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
 
+import { DesktopCard } from "./desktop-card";
 import { ImportBackupForm } from "./import-backup-form";
 
 export const metadata: Metadata = {
@@ -46,6 +47,8 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <DesktopCard />
     </main>
   );
 }

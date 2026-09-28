@@ -246,3 +246,38 @@ export const backupSchema = z.object({
   scheduleEntries: z.array(scheduleEntrySchema),
 });
 export type Backup = z.infer<typeof backupSchema>;
+
+// ── Desktop app (apps/desktop) ───────────────────────────────────────────────
+
+/** Auto-update state reported by the desktop app. */
+export type UpdateStatus =
+  /** Updates only run in an installed build. */
+  | { state: "disabled" }
+  | { state: "idle" }
+  | { state: "checking" }
+  | { state: "up_to_date"; version: string }
+  | { state: "downloading"; version: string; percent: number | null }
+  /** Downloaded; installs on restart (or on the next quit). */
+  | { state: "ready"; version: string }
+  | { state: "error"; message: string };
+
+export interface DesktopInfo {
+  version: string;
+  logsDir: string;
+  dataDir: string;
+  update: UpdateStatus;
+}
+
+/**
+ * What the desktop app's preload script exposes as `window.smaDesktop`.
+ * Absent when the app runs in a regular browser (`pnpm dev`).
+ */
+export interface DesktopBridge {
+  getInfo(): Promise<DesktopInfo>;
+  openLogsFolder(): Promise<void>;
+  openDataFolder(): Promise<void>;
+  checkForUpdates(): Promise<UpdateStatus>;
+  installUpdate(): Promise<void>;
+  /** Returns an unsubscribe function. */
+  onUpdateStatus(listener: (status: UpdateStatus) => void): () => void;
+}

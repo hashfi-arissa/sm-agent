@@ -8,3 +8,7 @@ data/
 next-env.d.ts
 packages/db/drizzle/
 packages/ai/src/codex/protocol/
+
+# desktop app: staged server/Codex and installer output
+apps/desktop/.stage/
+apps/desktop/release/

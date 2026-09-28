@@ -13,9 +13,12 @@ import {
 } from "@repo/ui/components/card";
 import { CalendarDays, FileText, MessagesSquare, Plus } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
+import { ONBOARDED_COOKIE } from "@/lib/onboarding";
 import { toLocalDate } from "@/lib/schedule-dates";
 import { timeAgo } from "@/lib/time";
 
@@ -30,6 +33,7 @@ function addDays(date: string, days: number): string {
 
 export default async function Home() {
   await connection();
+  if (!(await cookies()).has(ONBOARDED_COOKIE)) redirect("/welcome");
   const db = getDb();
 
   const from = toLocalDate(new Date());

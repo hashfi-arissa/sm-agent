@@ -1,4 +1,4 @@
-import { getAIProvider, type ModelInfo, type ProviderStatus } from "@repo/ai";
+import { getAIProvider, type ModelInfo } from "@repo/ai";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/alert";
 import { Badge } from "@repo/ui/components/badge";
 import {
@@ -9,10 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@repo/ui/components/card";
-import { CircleAlert, CircleCheck, CircleX } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import type { ReactNode } from "react";
+
+import { AccountCheck, CliCheck } from "@/components/codex-checks";
+import { StatusCheck } from "@/components/status-check";
 
 import { ConnectActions } from "./connect-actions";
 import { TestPrompt } from "./test-prompt";
@@ -56,7 +58,7 @@ export default async function ConnectPage() {
             <ul className="flex flex-col gap-3">
               <CliCheck status={status} />
               <AccountCheck status={status} />
-              <Check
+              <StatusCheck
                 ok={models.length > 0}
                 label="Models"
                 detail={
@@ -86,95 +88,6 @@ export default async function ConnectPage() {
         </Card>
       )}
     </main>
-  );
-}
-
-function CliCheck({ status }: { status: ProviderStatus }) {
-  if (status.state === "not_installed") {
-    return (
-      <Check ok={false} label="Codex CLI" detail="Not found on this computer">
-        <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
-          npm i -g @openai/codex
-        </code>
-      </Check>
-    );
-  }
-  const version = "version" in status ? status.version : null;
-  return (
-    <Check
-      ok
-      label="Codex CLI"
-      detail={version ? `v${version}` : "Installed"}
-    />
-  );
-}
-
-function AccountCheck({ status }: { status: ProviderStatus }) {
-  if (status.state !== "ready") {
-    return (
-      <Check
-        ok={false}
-        label="ChatGPT account"
-        detail="Not signed in — use Sign in with ChatGPT"
-      />
-    );
-  }
-  const { account } = status;
-  if (account.type === "chatgpt") {
-    return (
-      <Check
-        ok
-        label="ChatGPT account"
-        detail={[account.email, `${capitalize(account.plan)} plan`]
-          .filter(Boolean)
-          .join(" · ")}
-      />
-    );
-  }
-  return (
-    <Check
-      ok={false}
-      label="ChatGPT account"
-      detail={
-        account.type === "apiKey"
-          ? "Codex is using an API key — sign in with ChatGPT to use your subscription"
-          : account.label
-      }
-    />
-  );
-}
-
-function Check({
-  ok,
-  label,
-  detail,
-  children,
-}: {
-  ok: boolean;
-  label: string;
-  detail: string;
-  children?: ReactNode;
-}) {
-  const Icon = ok ? CircleCheck : CircleX;
-  return (
-    <li className="flex items-start gap-3">
-      <Icon
-        className={
-          ok
-            ? "mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-            : "text-destructive mt-0.5 size-4 shrink-0"
-        }
-        aria-hidden
-      />
-      <div className="flex flex-col gap-1">
-        <span className="font-medium">
-          {label}
-          <span className="sr-only">{ok ? " — OK" : " — needs attention"}</span>
-        </span>
-        <span className="text-muted-foreground">{detail}</span>
-        {children}
-      </div>
-    </li>
   );
 }
 
@@ -220,8 +133,4 @@ function ModelsCard({ models }: { models: ModelInfo[] }) {
       </CardContent>
     </Card>
   );
-}
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

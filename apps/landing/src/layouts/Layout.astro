@@ -1,0 +1,58 @@
+---
+import "@repo/ui/globals.css";
+
+import { DOWNLOAD_URL, RELEASES_URL } from "../config";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+  </head>
+  <body class="bg-background text-foreground">
+    <header class="border-b border-border">
+      <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+        <a href="/" class="text-sm font-semibold tracking-tight">
+          Social Media Agent
+        </a>
+        <a
+          href={DOWNLOAD_URL}
+          class="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+        >
+          Download
+        </a>
+      </nav>
+    </header>
+
+    <slot />
+
+    <footer class="border-t border-border">
+      <div class="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
+        <span>© {new Date().getFullYear()} Social Media Agent</span>
+        <div class="flex items-center gap-6">
+          <a href="/privacy" class="hover:text-foreground">
+            Privacy
+          </a>
+          <a href="/terms" class="hover:text-foreground">
+            Terms
+          </a>
+          <a href={RELEASES_URL} class="hover:text-foreground">
+            Changelog
+          </a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

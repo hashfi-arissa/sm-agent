@@ -1,0 +1,93 @@
+---
+import { ISSUES_URL } from "../config";
+import LegalPage from "../layouts/LegalPage.astro";
+---
+
+<LegalPage
+  title="Privacy Policy"
+  description="How Social Media Agent handles your data: it stays on your computer."
+  updated="September 28, 2026"
+>
+  <p>
+    Social Media Agent is a desktop app for planning, drafting and scheduling
+    Instagram Reels. It runs on your computer and has no servers or accounts of
+    its own. This policy explains what data it handles and where that data goes.
+  </p>
+
+  <h2>The short version</h2>
+  <ul>
+    <li>
+      Your drafts, chats, contents and schedule are stored only on your
+      computer.
+    </li>
+    <li>
+      What you type in a drafting chat goes to OpenAI through the Codex CLI,
+      under your own ChatGPT account.
+    </li>
+    <li>We don't collect analytics, telemetry or crash reports.</li>
+    <li>The app checks GitHub for updates, and GitHub sees those requests.</li>
+  </ul>
+
+  <h2>Data stored on your computer</h2>
+  <p>
+    Everything you create in the app (draft chats, draft documents, contents and
+    your posting schedule) is saved in a local database in your user profile. On
+    Windows that is
+    <code>%APPDATA%\Social Media Agent\data</code>. We never receive a copy. You
+    can export or restore it from Settings, and delete it by removing that
+    folder.
+  </p>
+  <p>
+    Error and crash logs are also kept locally, in
+    <code>%APPDATA%\Social Media Agent\logs</code>. They are never uploaded. If
+    you report a problem, you choose whether to share them.
+  </p>
+
+  <h2>AI drafting through Codex and OpenAI</h2>
+  <p>
+    Drafting uses the Codex CLI (made by OpenAI), which the app runs on your
+    computer and signs in with your ChatGPT account. When you send a message in
+    a draft, or convert a draft into content, that text and the conversation so
+    far are sent to OpenAI to generate a reply. OpenAI handles that data under
+    its own terms and privacy policy, and it counts toward your ChatGPT plan's
+    usage limits. We do not see or store it anywhere except on your computer.
+  </p>
+  <p>
+    Signing in happens in your web browser on OpenAI's site. The app never sees
+    your password. Codex stores its sign-in and its own conversation history in
+    your user folder (<code>~/.codex</code>). Deleting a draft in the app also
+    deletes its Codex conversation.
+  </p>
+
+  <h2>Updates</h2>
+  <p>
+    The installed app checks for new versions on GitHub, where releases are
+    published, a few times a day and downloads updates from there. Like any
+    website, GitHub receives your IP address and basic request information when
+    this happens. See GitHub's privacy statement for how it handles that.
+  </p>
+
+  <h2>This website</h2>
+  <p>
+    This site is a static page. It sets no cookies and runs no analytics or
+    tracking scripts. The company hosting it may keep standard server logs, such
+    as IP address and browser type, to operate and secure the site.
+  </p>
+
+  <h2>Children</h2>
+  <p>
+    The app requires a ChatGPT account, so it is subject to OpenAI's minimum age
+    requirements. It is not directed at children.
+  </p>
+
+  <h2>Changes</h2>
+  <p>
+    If how the app handles data changes, we will update this page and its date
+    before the change ships.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Questions about privacy? <a href={ISSUES_URL}>Open an issue on GitHub</a>.
+  </p>
+</LegalPage>

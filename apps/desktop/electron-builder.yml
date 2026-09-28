@@ -1,0 +1,64 @@
+# Installer config. Build with `pnpm --filter desktop dist` (output in release/).
+appId: com.hashfi.social-media-agent
+productName: Social Media Agent
+copyright: Copyright © 2026 Hashfi
+
+directories:
+  output: release
+  # App icon etc. (icon.ico, 256×256). Not `build/`, which the root .gitignore excludes.
+  buildResources: assets
+
+# Main + preload are self-contained esbuild bundles; nothing from node_modules ships in app.asar.
+files:
+  - dist/**/*
+  - "!dist/**/*.map"
+  - package.json
+
+# Produced by scripts/stage.mjs.
+extraResources:
+  - from: .stage/server
+    to: server
+  # electron-builder always skips a node_modules directly under `from`, so copy it separately.
+  - from: .stage/server/node_modules
+    to: server/node_modules
+  - from: .stage/migrations
+    to: migrations
+  - from: .stage/codex
+    to: codex
+  # Third-party notices, including the Apache-2.0 license for the bundled Codex CLI.
+  - from: licenses
+    to: licenses
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  # Code signing: set CSC_LINK / CSC_KEY_PASSWORD in the environment. Unsigned builds work
+  # but Windows SmartScreen warns on first run.
+  # Leave the bundled Codex binaries as shipped (already signed by OpenAI).
+  signExts:
+    - "!codex.exe"
+    - "!codex-code-mode-host.exe"
+    - "!codex-command-runner.exe"
+    - "!codex-windows-sandbox-setup.exe"
+    - "!codex-voice-host.exe"
+    - "!rg.exe"
+
+nsis:
+  # Per-user install, no admin prompt — also what lets auto-update run silently.
+  oneClick: true
+  perMachine: false
+  artifactName: Social-Media-Agent-Setup-${version}.${ext}
+  shortcutName: Social Media Agent
+  uninstallDisplayName: Social Media Agent
+  # Keep the user's drafts and settings (%APPDATA%\Social Media Agent) on uninstall.
+  deleteAppDataOnUninstall: false
+
+# Auto-update feed (electron-updater). `pnpm --filter desktop release` uploads the
+# installer + latest.yml to a GitHub release; needs GH_TOKEN with repo access.
+# TODO(release): replace OWNER/REPO with the real GitHub repository.
+publish:
+  provider: github
+  owner: OWNER
+  repo: REPO
+  releaseType: release

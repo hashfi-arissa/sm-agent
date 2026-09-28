@@ -63,8 +63,9 @@ export class CodexProvider implements AIProvider {
   constructor(private readonly options: CodexProviderOptions = {}) {}
 
   async getStatus(): Promise<ProviderStatus> {
-    if (!this.launch())
-      return { state: "not_installed", message: INSTALL_HINT };
+    const launch = this.launch();
+    if (!launch) return { state: "not_installed", message: INSTALL_HINT };
+    const bundled = launch.bundled ?? false;
     try {
       const session = await this.connect();
       const res = await session.rpc.request<GetAccountResponse>(
@@ -77,6 +78,7 @@ export class CodexProvider implements AIProvider {
         return {
           state: "ready",
           version: session.version,
+          bundled,
           account: toAccountInfo(res.account),
         };
       }
@@ -84,10 +86,11 @@ export class CodexProvider implements AIProvider {
         return {
           state: "ready",
           version: session.version,
+          bundled,
           account: { type: "other", label: "No sign-in required" },
         };
       }
-      return { state: "signed_out", version: session.version };
+      return { state: "signed_out", version: session.version, bundled };
     } catch (error) {
       return { state: "error", message: errorMessage(error) };
     }

@@ -26,8 +26,14 @@ export type ProviderStatus =
   | { state: "not_installed"; message: string }
   /** CLI found but it failed to start or answer. */
   | { state: "error"; message: string }
-  | { state: "signed_out"; version: string | null }
-  | { state: "ready"; version: string | null; account: AccountInfo };
+  | { state: "signed_out"; version: string | null; bundled: boolean }
+  | {
+      state: "ready";
+      version: string | null;
+      /** True when running the CLI shipped with the desktop app rather than a system install. */
+      bundled: boolean;
+      account: AccountInfo;
+    };
 
 /** Why a turn failed, so the UI can say what to do next. */
 export type AIErrorCode =
