@@ -368,6 +368,20 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
 - [x] ~~Wire up the waitlist form to a real backend once one is chosen~~ → superseded in M5:
       the waitlist section was replaced by downloads
 - [ ] Astro build, deploy
+      → `pnpm --filter landing build` verified clean (3 pages: `/`, `/privacy`, `/terms`) into
+      `apps/landing/dist/`. Deploy target: **Cloudflare Pages, connected to the GitHub repo**
+      (auto-deploys on push to `main`). Added root `.nvmrc` (`22`, matches `engines.node`) so
+      Cloudflare's build image picks the right Node version; `packageManager: "pnpm@12.6.0"` in
+      the root `package.json` is already enough for Cloudflare to use pnpm via Corepack.
+      Remaining steps are account actions only I can't do for you:
+      1. Push this repo to a GitHub repo (none is set as a remote yet).
+      2. Update `GITHUB_REPO` in `apps/landing/src/config.ts` (still the `OWNER/REPO` placeholder)
+         once that repo exists, so the download/release links resolve.
+      3. In the Cloudflare dashboard: Workers & Pages → Create → Pages → Connect to Git → pick
+         that repo. Build settings: **Build command** `pnpm install --frozen-lockfile && pnpm
+         --filter landing build`, **Build output directory** `apps/landing/dist`, **Root
+         directory** leave blank (must build from the monorepo root so the `@repo/ui` workspace
+         package resolves).
 
 ### M5 — Public release
 
