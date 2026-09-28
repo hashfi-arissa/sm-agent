@@ -55,7 +55,9 @@ Run from the repo root:
 - Desktop: `pnpm --filter desktop stage` (standalone app build + Codex into `.stage/`; re-run after
   app changes), then `pnpm --filter desktop start`. Set `SMA_APP_URL=http://localhost:3000` to run
   the shell against `pnpm dev` instead. Installer: `pnpm --filter desktop dist` → `apps/desktop/release/`
-  (`release` also publishes to GitHub; needs `GH_TOKEN`)
+  `pnpm --filter desktop release` builds and publishes to GitHub via `scripts/publish.mjs`
+  (needs `GH_TOKEN` in the env or `apps/desktop/electron-builder.env`; bump `version` first;
+  `release:upload --dry-run` checks everything without publishing)
 
 Before calling work done: `pnpm typecheck && pnpm lint && pnpm test && pnpm build` must pass.
 For UI changes, also check it in the browser (`/connect` exercises Codex end to end).

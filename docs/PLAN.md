@@ -427,8 +427,11 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       reports "up to date". **Known issue:** `pnpm --filter desktop release` started two GitHub
       publishers, both tried to create the release, and the second failed with `422 already_exists`
       before `latest.yml` was written — it and the blockmap were uploaded by hand via the API
-      (installer verified byte-identical by SHA-256). Fix before v0.1.1: pre-create the release as a
-      draft, or publish with a small API script instead of electron-builder's publisher
+      (installer verified byte-identical by SHA-256). Fixed: root cause is a race in electron-builder's
+      `PublishManager.getOrCreatePublisher` (cache set after an `await`, so the installer and
+      blockmap each create a publisher). `release` now builds with `--publish never` and
+      `scripts/publish.mjs` uploads via the GitHub API into a draft, verifies GitHub's SHA-256,
+      then publishes; `--dry-run` checks everything without touching GitHub
 - [ ] Verify auto-update end to end: publish v0.1.1 and confirm the installed v0.1.0 updates
 - [ ] Install on a clean Windows machine/VM (only tested on the dev machine so far)
 

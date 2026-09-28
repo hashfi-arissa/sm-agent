@@ -58,8 +58,10 @@ nsis:
   # Keep the user's drafts and settings (%APPDATA%\Social Media Agent) on uninstall.
   deleteAppDataOnUninstall: false
 
-# Auto-update feed (electron-updater). `pnpm --filter desktop release` uploads the
-# installer + latest.yml to a GitHub release; needs GH_TOKEN with repo access.
+# Auto-update feed: written into the app as app-update.yml for electron-updater, and read by
+# scripts/publish.mjs as the upload target. Uploads don't use electron-builder's publisher
+# (it races with itself and fails with 422); `pnpm --filter desktop release` builds with
+# `--publish never`, then publish.mjs uploads to a draft and publishes it. Needs GH_TOKEN.
 # The repo must be public: electron-updater and the landing page's download links fetch
 # releases without credentials.
 publish:
