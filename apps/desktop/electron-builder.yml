@@ -2,6 +2,10 @@
 appId: com.hashfi.social-media-agent
 productName: Social Media Agent
 copyright: Copyright © 2026 Hashfi
+# The workspace package is called "desktop"; the installer names the install folder
+# (%LOCALAPPDATA%Programs<name>) and updater cache after this instead.
+extraMetadata:
+  name: social-media-agent
 
 directories:
   output: release
@@ -56,9 +60,10 @@ nsis:
 
 # Auto-update feed (electron-updater). `pnpm --filter desktop release` uploads the
 # installer + latest.yml to a GitHub release; needs GH_TOKEN with repo access.
-# TODO(release): replace OWNER/REPO with the real GitHub repository.
+# The repo must be public: electron-updater and the landing page's download links fetch
+# releases without credentials.
 publish:
   provider: github
-  owner: OWNER
-  repo: REPO
+  owner: hashfi-arissa
+  repo: sm-agent
   releaseType: release

@@ -66,7 +66,7 @@ export function initUpdater(opts: {
     void promptRestart(info.version);
   });
   autoUpdater.on("error", (error) =>
-    set({ state: "error", message: error.message }),
+    set({ state: "error", message: describeError(error) }),
   );
 
   set({ state: "idle" });
@@ -85,10 +85,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
   try {
     await autoUpdater.checkForUpdates();
   } catch (error) {
-    set({
-      state: "error",
-      message: error instanceof Error ? error.message : String(error),
-    });
+    set({ state: "error", message: describeError(error) });
   }
   return status;
 }
@@ -110,4 +107,16 @@ async function promptRestart(version: string) {
     cancelId: 1,
   });
   if (response === 0) autoUpdater.quitAndInstall();
+}
+
+/** electron-updater errors can embed whole HTTP responses; keep it to one readable line. */
+function describeError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const code = (error as { code?: string } | null)?.code;
+  if (code === "HTTP_ERROR_404")
+    return "No published releases found on the update server.";
+  if (code?.startsWith("HTTP_ERROR_"))
+    return `The update server returned an error (${code.slice(11)}).`;
+  const first = message.split("\n")[0]!.trim();
+  return first.length > 160 ? `${first.slice(0, 157)}…` : first;
 }
