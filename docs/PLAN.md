@@ -422,8 +422,15 @@ the contents/drafts list pages into `src/lib/time.ts` while touching those files
       Codex sparkle on a dark tile); `icon.ico` (16–256 px, PNG-compressed) and `icon.png` (512 px,
       dev window) and both favicons are rendered from it by `pnpm --filter desktop icons`
 - [ ] Code-signing certificate (`CSC_LINK`/`CSC_KEY_PASSWORD`) so SmartScreen stops warning
-- [ ] Publish v0.1.0 (`GH_TOKEN=… pnpm --filter desktop release`), install it on a clean Windows
-      machine, then publish v0.1.1 to verify auto-update end to end
+- [x] Publish v0.1.0 → https://github.com/hashfi-arissa/sm-agent/releases/tag/v0.1.0 (installer,
+      `.blockmap`, `latest.yml`). Installed on the dev machine; the installed app's update check
+      reports "up to date". **Known issue:** `pnpm --filter desktop release` started two GitHub
+      publishers, both tried to create the release, and the second failed with `422 already_exists`
+      before `latest.yml` was written — it and the blockmap were uploaded by hand via the API
+      (installer verified byte-identical by SHA-256). Fix before v0.1.1: pre-create the release as a
+      draft, or publish with a small API script instead of electron-builder's publisher
+- [ ] Verify auto-update end to end: publish v0.1.1 and confirm the installed v0.1.0 updates
+- [ ] Install on a clean Windows machine/VM (only tested on the dev machine so far)
 
 **Result so far:** verified 2026-09-28 — `pnpm --filter desktop start` and the packaged
 `release/win-unpacked` build both boot the server, create the db under `%APPDATA%`, and refuse

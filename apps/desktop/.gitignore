@@ -2,3 +2,6 @@
 dist/
 .stage/
 release/
+
+# GH_TOKEN for `pnpm release` (electron-builder loads it automatically) — never commit
+electron-builder.env
